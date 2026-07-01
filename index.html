@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>WorkScan</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ── ธีมสว่างนวล (Soft) — เทาอมฟ้า สบายตาในร่ม ── */
+  --bg:#eef1f6; --sf:#ffffff; --sf2:#f5f7fb; --sf3:#e8edf5;
+  --bd:#dde3ec; --bd2:#c4cdda;
+  --ac:#2563eb; --ac2:#4f46e5;
+  --ok:#059669; --wn:#d97706; --er:#dc2626;
+  --tx:#1e2733; --tx2:#5a6678; --tx3:#94a1b3;
+  --fn:'IBM Plex Sans Thai',sans-serif; --mo:'IBM Plex Mono',monospace;
+  --sab:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fn)}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(10,12,16,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-size:13px}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-tabs{display:flex;gap:3px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:3px}
+.nav-tab{padding:4px 12px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--tx2);transition:all .15s;font-family:var(--fn)}
+.nav-tab.active{background:var(--ac);color:#fff}
+.nav-tab.co{background:var(--er);color:#fff}
+.nav-tab.ht{background:var(--sf2);color:var(--tx2)}
+.nav-tab.hr{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
+.nav-tab.hr.active{background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff}
+.hr-menu-card{display:flex;align-items:center;gap:12px;padding:16px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;cursor:pointer;transition:all .15s}
+.hr-menu-card:active{transform:scale(.98);background:var(--sf2)}
+.hr-menu-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.hr-menu-title{font-size:15px;font-weight:600;color:var(--tx)}
+.hr-menu-desc{font-size:11px;color:var(--tx3);margin-top:2px}
+.hr-menu-arrow{font-size:22px;color:var(--tx3);flex-shrink:0}
+.hd-row{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;margin-bottom:6px}
+.hd-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;flex-shrink:0}
+.hd-b-absent{background:rgba(120,120,130,.15);color:var(--tx2)}
+.hd-b-late{background:rgba(217,119,6,.12);color:var(--wn)}
+.hd-b-noout{background:rgba(220,38,38,.1);color:var(--er)}
+.hd-b-present{background:rgba(5,150,105,.12);color:var(--ok)}
+.hd-name{font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-meta{font-size:10px;color:var(--tx3);margin-top:1px}
+.hd-times{font-family:var(--mo);font-size:11px;color:var(--tx2);text-align:right;flex-shrink:0;line-height:1.5}
+.hd-card{padding:14px;text-align:center;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;cursor:pointer;transition:all .15s}
+.hd-card:active{transform:scale(.97)}
+.hd-card.sel{border-color:var(--ac);background:var(--sf2)}
+.hd-card-lbl{font-size:11px;color:var(--tx3);margin-bottom:4px}
+.hd-card-val{font-size:26px;font-weight:700}
+.exp-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .12s}
+.exp-row:active{background:var(--sf2)}
+.exp-row.sel{background:rgba(124,58,237,.08)}
+.exp-cb{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--bd2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.exp-row.sel .exp-cb{background:var(--ac);border-color:var(--ac)}
+.exp-nm{font-size:13px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-meta{font-size:10px;color:var(--tx3)}
+.rep-stat{flex:1;min-width:64px;padding:7px 0;border-radius:8px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;font-weight:500;font-family:var(--fn);cursor:pointer;transition:all .15s}
+.rep-stat.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.rep-table{width:100%;border-collapse:collapse;font-size:11px}
+.rep-table th{background:var(--sf2);padding:8px 6px;text-align:left;color:var(--tx3);font-weight:500;white-space:nowrap;position:sticky;top:0}
+.rep-table td{padding:7px 6px;border-top:1px solid var(--bd);white-space:nowrap;color:var(--tx)}
+.rep-bdg{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:600}
+.nav-clock{font-family:var(--mo);font-size:11px;color:var(--tx3)}
+
+.page{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px calc(20px + var(--sab));z-index:1}
+.page.active{display:block}
+.page.with-strip{top:88px}
+
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}
+.card.er::before{background:linear-gradient(90deg,transparent,rgba(239,68,68,.4),transparent)}
+.card.ok::before{background:linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)}
+.sec{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);margin-bottom:12px}
+
+.steps-bar{display:flex;align-items:center;margin-bottom:24px}
+.sb-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+.sb-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:calc(50% + 16px);right:calc(-50% + 16px);height:2px;background:var(--bd2);z-index:0}
+.sb-step.done:not(:last-child)::after{background:var(--ok)}
+.sb-dot{width:28px;height:28px;border-radius:50%;background:var(--sf2);border:2px solid var(--bd2);display:grid;place-items:center;font-size:12px;font-weight:600;position:relative;z-index:1;transition:all .3s}
+.sb-step.cur .sb-dot{border-color:var(--ac);background:rgba(59,130,246,.15);color:var(--ac)}
+.sb-step.done .sb-dot{border-color:var(--ok);background:rgba(16,185,129,.15);color:var(--ok)}
+.sb-lbl{font-size:10px;color:var(--tx3);text-align:center;white-space:nowrap}
+.sb-step.cur .sb-lbl{color:var(--ac)}
+.sb-step.done .sb-lbl{color:var(--ok)}
+
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:7px}
+.inp{width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;color:var(--tx);font-size:15px;font-family:var(--fn);outline:none;transition:border-color .15s;-webkit-appearance:none}
+.inp:focus{border-color:var(--ac)}
+.inp.mono{font-family:var(--mo);letter-spacing:4px;text-align:center;font-size:22px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+select.inp option{background:var(--sf2)}
+
+.cam-wrap{position:relative;background:#060810;border-radius:14px;overflow:hidden;border:2px solid var(--ac);aspect-ratio:3/4;max-height:420px;margin:0 auto 10px;width:100%}
+.cam-wrap video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+.cam-wrap.er{border-color:var(--er)}
+.face-ring{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.oval{width:88px;height:108px;border:2px solid var(--ac);border-radius:50% 50% 45% 45%;position:relative;animation:ov 2s ease-in-out infinite}
+.oval.er{border-color:var(--er);animation:ov-er 2s ease-in-out infinite}
+@keyframes ov{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}50%{box-shadow:0 0 0 7px rgba(59,130,246,.1)}}
+@keyframes ov-er{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 0 7px rgba(239,68,68,.1)}}
+.fc{position:absolute;width:11px;height:11px;border-style:solid;border-color:var(--ac)}
+.fc.tl{top:-2px;left:-2px;border-width:2px 0 0 2px;border-radius:3px 0 0 0}
+.fc.tr{top:-2px;right:-2px;border-width:2px 2px 0 0;border-radius:0 3px 0 0}
+.fc.bl{bottom:-2px;left:-2px;border-width:0 0 2px 2px;border-radius:0 0 0 3px}
+.fc.br{bottom:-2px;right:-2px;border-width:0 2px 2px 0;border-radius:0 0 3px 0}
+.scan-ln{position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),transparent);animation:sc 3s ease-in-out infinite}
+.scan-ln.er{background:linear-gradient(90deg,transparent,rgba(239,68,68,.8),transparent)}
+@keyframes sc{0%{top:20%;opacity:0}20%{opacity:1}80%{opacity:1}100%{top:80%;opacity:0}}
+.cam-lbl{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.5)}
+.cam-st{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx2)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--wn);animation:bl 1.2s infinite}
+.dot.g{background:var(--ok);animation:none}
+.dot.r{background:var(--er);animation:none}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hist-table{width:100%;border-collapse:collapse;font-size:12px}
+.hist-table th{text-align:left;padding:7px 8px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--bd2)}
+.hist-table td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
+.hist-table tr:last-child td{border-bottom:none}
+.hist-date{font-size:11px;color:var(--tx2);white-space:nowrap}
+.type-in{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(37,99,235,.12);color:var(--ac)}
+.type-out{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(220,38,38,.1);color:var(--er)}
+.status-ok{color:var(--ok);font-size:10px}
+.status-late{color:var(--wn);font-size:10px}
+.status-err{color:var(--er);font-size:10px}
+.hist-empty{text-align:center;padding:32px 0;color:var(--tx3);font-size:13px}
+.range-btn{flex:1;padding:8px 0;border-radius:8px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;font-weight:500;font-family:var(--fn);cursor:pointer;transition:all .15s}
+.range-btn.active{background:var(--ac);border-color:var(--ac);color:#fff}
+
+.selfie-row{display:flex;align-items:center;gap:12px;margin-top:10px}
+.selfie-thumb{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--ok);display:none}
+.selfie-ok{font-size:12px;color:var(--ok)}
+
+.gps-map{background:#060d1a;border-radius:8px;height:108px;position:relative;overflow:hidden;border:1px solid var(--bd2);margin-bottom:10px}
+.gps-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.08) 1px,transparent 1px);background-size:20px 20px}
+.gps-zone{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;border:1.5px dashed rgba(59,130,246,.5);background:rgba(59,130,246,.06)}
+.gps-bld{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:rgba(59,130,246,.5);border-radius:2px;border:1px solid var(--ac)}
+.gps-dot{position:absolute;width:10px;height:10px;background:var(--ok);border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px rgba(16,185,129,.6);transition:top .5s,left .5s}
+.gps-ring{position:absolute;border-radius:50%;border:2px solid var(--ok);top:50%;left:50%;transform:translate(-50%,-50%);animation:gpr 2s ease-out infinite;pointer-events:none}
+@keyframes gpr{0%{width:10px;height:10px;opacity:1}100%{width:32px;height:32px;opacity:0}}
+.gps-rows{display:flex;flex-direction:column;gap:6px}
+.gps-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.gps-row span:first-child{color:var(--tx2)}
+
+.badge{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+.badge.ok{background:rgba(5,150,105,.12);color:var(--ok)}
+.badge.wn{background:rgba(217,119,6,.12);color:var(--wn)}
+.badge.er{background:rgba(220,38,38,.12);color:var(--er)}
+
+.stps{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.stp{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);background:var(--sf);border:1px solid var(--bd);padding:4px 9px;border-radius:7px;transition:all .3s}
+.stp.pass{border-color:rgba(5,150,105,.4);background:rgba(5,150,105,.08);color:var(--ok)}
+
+.timer-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.timer-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(239,68,68,.5),transparent)}
+.t-lbl{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);margin-bottom:5px}
+.t-val{font-family:var(--mo);font-size:32px;font-weight:500;letter-spacing:2px;line-height:1;margin-bottom:3px}
+.t-sub{font-size:11px;color:var(--tx2)}
+.prog-t{background:var(--bd);border-radius:99px;height:6px;overflow:hidden;margin-top:8px}
+.prog-f{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ac),#22d3ee);transition:width 1s linear}
+
+.banner{display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:500}
+.banner.b{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);color:var(--ac)}
+.banner.r{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:var(--er)}
+.banner.g{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.25);color:var(--ok)}
+.banner.w{background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);color:var(--wn)}
+.bdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bdot.b{background:var(--ac)}
+.bdot.r{background:var(--er);animation:bl 1.5s infinite}
+.bdot.g{background:var(--ok)}
+
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;font-family:var(--fn);cursor:pointer;transition:all .2s;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:disabled{background:var(--sf2)!important;color:var(--tx3)!important;cursor:not-allowed!important}
+.btn.p{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
+.btn.d{background:linear-gradient(135deg,var(--er),#dc2626);color:#fff}
+.btn.o{background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2)}
+.btn.sm{width:auto;padding:8px 16px;font-size:12px;border-radius:8px;margin-bottom:0}
+
+.empid-box{background:var(--sf2);border:1px solid rgba(16,185,129,.3);border-radius:14px;padding:24px;text-align:center;margin:16px 0}
+.empid-lbl{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.empid-val{font-family:var(--mo);font-size:34px;font-weight:600;color:var(--ok);letter-spacing:3px}
+.empid-note{font-size:12px;color:var(--tx2);margin-top:8px;line-height:1.5}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:20px}
+.overlay.show{display:flex}
+.res-card{background:var(--sf);border:1px solid var(--bd2);border-radius:20px;padding:26px 20px;text-align:center;width:100%;max-width:320px;animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.r-icon{font-size:44px;margin-bottom:10px}
+.r-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.r-time{font-family:var(--mo);font-size:26px;font-weight:500;margin-bottom:5px}
+.r-sub{font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:14px;white-space:pre-line}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.s-item{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;text-align:left}
+.s-lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.s-val{font-size:13px;font-weight:600;font-family:var(--mo)}
+
+.toast{position:fixed;bottom:calc(16px + var(--sab));left:16px;right:16px;background:var(--sf);border:1px solid var(--er);border-radius:10px;padding:11px 14px;color:var(--er);font-size:13px;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--ok);color:var(--ok)}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+.spin.dk{border-color:rgba(0,0,0,.12);border-top-color:var(--ac)}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="logo-icon">W</div>WorkScan</div>
+  <div class="nav-right">
+    <div class="nav-tabs" id="nav-tabs" style="display:none">
+      <!-- เมนูพนักงาน -->
+      <button class="nav-tab active" id="tab-in">เช็คอิน</button>
+      <button class="nav-tab"        id="tab-out">เช็คเอาต์</button>
+      <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
+      <!-- เมนู HR (ซ่อนไว้ก่อน แสดงเมื่อ role=HR) -->
+      <button class="nav-tab hr" id="tab-hr-dash" style="display:none">HR</button>
+    </div>
+    <div class="nav-clock" id="clock">--:--:--</div>
+  </div>
+</nav>
+
+<!-- Employee strip — แสดงหลัง login สำเร็จ -->
+<div id="emp-strip" style="display:none;background:var(--sf2);border-bottom:1px solid var(--bd);padding:6px 16px;align-items:center;gap:10px;position:fixed;top:52px;left:0;right:0;z-index:99">
+  <div id="emp-avatar" style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ac);flex-shrink:0">—</div>
+  <div style="flex:1;min-width:0">
+    <div id="emp-name-strip" style="font-size:12px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+    <div id="emp-meta-strip" style="font-size:10px;color:var(--tx3)">—</div>
+  </div>
+  <button id="btn-logout" style="background:none;border:1px solid var(--bd2);color:var(--tx2);font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:var(--fn);flex-shrink:0">ออกจากระบบ</button>
+</div>
+
+<div class="page active" id="page-welcome">
+  <div style="text-align:center;padding:28px 0 20px">
+    <div style="width:60px;height:60px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px">W</div>
+    <div style="font-size:24px;font-weight:600">WorkScan</div>
+    <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบลงเวลาเข้า-ออกงาน</div>
+  </div>
+
+  <div class="card">
+    <div class="sec">เข้าสู่ระบบ</div>
+    <div class="field">
+      <label>รหัสพนักงาน</label>
+      <input class="inp" id="login-id" placeholder="เช่น EMP001" autocomplete="off"
+        style="text-transform:uppercase">
+    </div>
+    <div class="field">
+      <label>รหัสผ่าน</label>
+      <input class="inp" id="login-pw" type="password" placeholder="••••••••"
+        autocomplete="current-password">
+    </div>
+    <button class="btn p" id="btn-login">เข้าสู่ระบบ</button>
+    <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--tx3)">
+      <span style="color:var(--ac);cursor:pointer;text-decoration:underline">ลืมรหัสผ่าน?</span>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:12px;color:var(--tx3);margin:2px 0 14px">— หรือ —</div>
+
+  <div class="card">
+    <div class="sec">พนักงานใหม่ยังไม่มีรหัสผ่าน</div>
+    <div style="font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.5">กรอกข้อมูลเพื่อยืนยันตัวตนกับ HR แล้วตั้งรหัสผ่านได้เลย</div>
+    <button class="btn o">ลงทะเบียนพนักงานใหม่ →</button>
+  </div>
+</div>
+
+<div class="page" id="page-forgot">
+  <button style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:14px;font-family:var(--fn)">← กลับ</button>
+  <div style="font-size:18px;font-weight:600;margin-bottom:3px">ลืมรหัสผ่าน</div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:18px;line-height:1.5">ยืนยันตัวตนด้วยข้อมูลที่ HR บันทึกไว้</div>
+
+  <div class="card">
+    <div class="sec">ยืนยันตัวตน</div>
+    <div class="field"><label>รหัสพนักงาน</label>
+      <input class="inp" id="fp-id" placeholder="EMP001" autocomplete="off"
+        style="text-transform:uppercase"></div>
+    <div class="field"><label>วันที่เริ่มงาน</label>
+      <input class="inp" id="fp-date" placeholder="วว/ดด/ปปปป" autocomplete="off"
+        inputmode="numeric" maxlength="10"></div>
+    <div class="field"><label>อีเมล</label>
+      <input class="inp" id="fp-email" type="email" placeholder="your@email.com" autocomplete="email" inputmode="email"></div>
+  </div>
+
+  <div class="card" id="fp-pw-card" style="display:none">
+    <div class="sec">ตั้งรหัสผ่านใหม่</div>
+    <div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label>
+      <input class="inp" id="fp-newpw" type="password" placeholder="••••••••" autocomplete="new-password"></div>
+    <div class="field"><label>ยืนยันรหัสผ่าน</label>
+      <input class="inp" id="fp-newpw2" type="password" placeholder="••••••••" autocomplete="new-password"></div>
+  </div>
+
+  <button class="btn p" id="btn-fp">ยืนยัน</button>
+</div>
+
+<div class="page" id="page-enrollment">
+  <button style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:14px;font-family:var(--fn)">← กลับ</button>
+  <div style="font-size:18px;font-weight:600;margin-bottom:3px">ลงทะเบียนพนักงานใหม่</div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:18px;line-height:1.5">HR ต้องบันทึกข้อมูลของคุณไว้ในระบบก่อน จึงจะลงทะเบียนได้</div>
+
+  <div class="steps-bar">
+    <div class="sb-step cur" id="eb1"><div class="sb-dot">1</div><div class="sb-lbl">ยืนยันตัวตน</div></div>
+    <div class="sb-step"     id="eb2"><div class="sb-dot">2</div><div class="sb-lbl">ตั้งรหัส + Selfie</div></div>
+    <div class="sb-step"     id="eb3"><div class="sb-dot">3</div><div class="sb-lbl">เสร็จสิ้น</div></div>
+  </div>
+
+  <div id="es1">
+    <div class="card">
+      <div class="sec">ข้อมูลที่ HR บันทึกไว้</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.5">
+        กรอกข้อมูลให้ตรงกับที่ HR ลงทะเบียนไว้ในระบบ
+      </div>
+      <div class="field"><label>รหัสพนักงาน (EmployeeID)</label>
+        <input class="inp" id="e-empid" placeholder="เช่น EMP001" autocomplete="off"
+          style="text-transform:uppercase"></div>
+      <div class="field"><label>วันที่เริ่มงาน (StartDate)</label>
+        <input class="inp" id="e-startdate" placeholder="วว/ดด/ปปปป" autocomplete="off"
+          inputmode="numeric" maxlength="10">
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px">ตัวอย่าง 01/06/2567 (พ.ศ.) หรือ 01/06/2024 (ค.ศ.) ระบบแปลงให้อัตโนมัติ</div></div>
+      <div class="field"><label>อีเมล (ที่แจ้งกับ HR)</label>
+        <input class="inp" id="e-email" type="email" placeholder="your@email.com"
+          autocomplete="email" inputmode="email"></div>
+      <button class="btn p" id="btn-verify">ตรวจสอบข้อมูล</button>
+    </div>
+  </div>
+
+  <div id="es2" style="display:none">
+    <div class="banner g"><div class="bdot g"></div>
+      <span>ยืนยันตัวตนสำเร็จ — <span id="verified-name" style="font-weight:500"></span></span>
+    </div>
+
+    <div class="card">
+      <div class="sec">ตั้งรหัสผ่าน</div>
+      <div class="field"><label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+        <input class="inp" id="e-pw" type="password" placeholder="••••••••" autocomplete="new-password"></div>
+      <div class="field"><label>ยืนยันรหัสผ่าน</label>
+        <input class="inp" id="e-pw2" type="password" placeholder="••••••••" autocomplete="new-password"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec">Selfie ลงทะเบียน</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5">
+        ถ่ายรูปหน้าตรง แสงดี (ไม่บังคับในระหว่างทดสอบ — ข้ามได้)
+      </div>
+      <div class="cam-wrap" id="e-cam-wrap" style="display:none">
+        <video id="v-enroll" autoplay muted playsinline></video>
+        <div class="scan-ln"></div>
+        <div class="face-ring"><div class="oval"><div class="fc tl"></div><div class="fc tr"></div><div class="fc bl"></div><div class="fc br"></div></div></div>
+        <div class="cam-lbl">จัดหน้าให้อยู่ในกรอบ</div>
+      </div>
+      <div class="selfie-row" id="selfie-done" style="display:none">
+        <img id="selfie-thumb" class="selfie-thumb" alt="selfie">
+        <div>
+          <div class="selfie-ok">✓ ถ่าย Selfie เรียบร้อย</div>
+          <button class="btn o sm" style="margin-top:6px">ถ่ายใหม่</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn o" id="btn-open-cam-e" style="flex:1">📷 เปิดกล้องถ่าย Selfie</button>
+      </div>
+      <button class="btn p" id="btn-snap" style="display:none;margin-top:8px">📸 ถ่าย Selfie</button>
+    </div>
+
+    <button class="btn p" id="btn-reg">ลงทะเบียนเลย ✓</button>
+  </div>
+
+  <div id="es3" style="display:none">
+    <div class="empid-box">
+      <div class="empid-lbl">ลงทะเบียนสำเร็จ</div>
+      <div class="empid-val" id="done-id">EMP000</div>
+      <div class="empid-note">บันทึกรหัสนี้ไว้ — ใช้ Login ทุกครั้ง</div>
+    </div>
+    <button class="btn p">Login เพื่อเช็คอินได้เลย →</button>
+  </div>
+</div>
+
+<div class="page" id="page-checkin">
+  <div class="banner b"><div class="bdot b"></div>เช็คอินเข้างาน — ยืนยัน 3 ขั้นตอน</div>
+
+  <div class="card">
+    <div class="sec">GPS Location</div>
+    <div class="gps-map"><div class="gps-grid"></div><div class="gps-zone"></div><div class="gps-bld"></div>
+      <div class="gps-dot" id="gdot-in" style="top:47%;left:48%"><div class="gps-ring"></div></div>
+    </div>
+    <div class="gps-rows">
+      <div class="gps-row"><span>สถานะ</span><span class="badge wn" id="gbg-in">กำลังหาตำแหน่ง...</span></div>
+      <div class="gps-row"><span>ระยะห่าง</span><span id="gd-in" style="font-family:var(--mo);font-size:12px">— ม.</span></div>
+      <div class="gps-row"><span>ความแม่นยำ GPS</span><span id="gacc-in" style="font-family:var(--mo);font-size:12px">— ม.</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec">📸 Selfie ยืนยันตัวตน</div>
+    <div class="cam-wrap" id="ci-cam-wrap" style="display:none">
+      <video id="v-in" autoplay muted playsinline></video>
+    </div>
+    <div class="selfie-row" id="ci-selfie-done" style="display:none">
+      <img id="ci-selfie-thumb" class="selfie-thumb" alt="selfie">
+      <div>
+        <div class="selfie-ok">✓ ถ่าย Selfie แล้ว</div>
+        <button class="btn o sm" id="ci-retake" style="margin-top:6px">ถ่ายใหม่</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn o" id="ci-open-cam" style="flex:1">เปิดกล้อง</button>
+      <button class="btn p" id="ci-snap" style="flex:1;display:none">ถ่าย Selfie</button>
+    </div>
+  </div>
+
+  <div class="stps">
+    <div class="stp" id="st-gps"><span>⏳</span><span>GPS</span></div>
+    <div class="stp" id="st-selfie"><span>⏳</span><span>Selfie</span></div>
+    <div class="stp pass"><span>✓</span><span>เวลา</span></div>
+  </div>
+  <button class="btn p" id="btn-ci">เช็คอินเข้างาน</button>
+  <div style="text-align:center;font-size:11px;color:var(--tx3);padding-bottom:6px" id="ci-lbl"></div>
+</div>
+
+<div class="page" id="page-checkout">
+  <div class="banner r"><div class="bdot r"></div>เช็คเอาต์ออกงาน</div>
+
+  <div class="timer-card">
+    <div class="t-lbl">เวลาทำงานวันนี้</div>
+    <div class="t-val" id="work-timer">00:00:00</div>
+    <div class="t-sub">เช็คอินเมื่อ <span id="co-inref" style="font-family:var(--mo)">—</span></div>
+    <div class="prog-t"><div class="prog-f" id="work-prog" style="width:0%"></div></div>
+  </div>
+
+  <div class="card er">
+    <div class="sec" style="color:var(--er)">GPS Location (ออกงาน)</div>
+    <div class="gps-map"><div class="gps-grid"></div><div class="gps-zone"></div><div class="gps-bld"></div>
+      <div class="gps-dot" id="gdot-out" style="top:47%;left:48%"><div class="gps-ring"></div></div>
+    </div>
+    <div class="gps-rows">
+      <div class="gps-row"><span>สถานะ</span><span class="badge wn" id="gbg-out">กำลังหาตำแหน่ง...</span></div>
+      <div class="gps-row"><span>ระยะห่าง</span><span id="gd-out" style="font-family:var(--mo);font-size:12px">— ม.</span></div>
+      <div class="gps-row"><span>ความแม่นยำ</span><span id="gacc-out" style="font-family:var(--mo);font-size:12px">— ม.</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec" style="color:var(--er)">📸 Selfie ยืนยันตัวตน (ออกงาน)</div>
+    <div class="cam-wrap er" id="co-cam-wrap" style="display:none">
+      <video id="v-out" autoplay muted playsinline></video>
+    </div>
+    <div class="selfie-row" id="co-selfie-done" style="display:none">
+      <img id="co-selfie-thumb" class="selfie-thumb" alt="selfie">
+      <div>
+        <div class="selfie-ok">✓ ถ่าย Selfie แล้ว</div>
+        <button class="btn o sm" id="co-retake" style="margin-top:6px">ถ่ายใหม่</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn o" id="co-open-cam" style="flex:1">เปิดกล้อง</button>
+      <button class="btn p" id="co-snap" style="flex:1;display:none">ถ่าย Selfie</button>
+    </div>
+  </div>
+
+  <button class="btn d" id="btn-co">เช็คเอาต์ออกงาน</button>
+</div>
+
+<div class="page" id="page-history">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div>
+      <div style="font-size:16px;font-weight:600" id="hist-title">ประวัติการลงเวลา</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:2px" id="hist-range-label">ย้อนหลัง 1 เดือน</div>
+    </div>
+    <button class="btn o sm" id="btn-hist-reload">รีเฟรช</button>
+  </div>
+
+  <!-- ปุ่มเลือกช่วงเวลา 1/2/3 เดือน -->
+  <div style="display:flex;gap:6px;margin-bottom:14px" id="hist-range-tabs">
+    <button class="range-btn active" data-months="1">1 เดือน</button>
+    <button class="range-btn" data-months="2">2 เดือน</button>
+    <button class="range-btn" data-months="3">3 เดือน</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="hist-summary">
+    <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
+      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">มาทำงาน</div>
+      <div style="font-size:22px;font-weight:600;color:var(--ok)" id="h-days">—</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
+      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">มาสาย</div>
+      <div style="font-size:22px;font-weight:600;color:var(--wn)" id="h-late">—</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
+      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">รอแก้ไข</div>
+      <div style="font-size:22px;font-weight:600;color:var(--er)" id="h-noout">—</div>
+    </div>
+  </div>
+
+  <div id="hist-loading" style="text-align:center;padding:40px 0;color:var(--tx3)">
+    <div class="spin dk" style="margin:0 auto 12px;display:block;width:22px;height:22px;border-width:3px"></div>
+    <div style="font-size:13px">กำลังโหลด...</div>
+  </div>
+
+  <div class="card" id="hist-card" style="display:none;padding:0;overflow:hidden">
+    <div id="hist-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ HR DASHBOARD (placeholder ขั้นที่ 2) ═══════════════ -->
+<div class="page" id="page-hr-dash">
+  <div style="margin-bottom:16px">
+    <div style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-flex;width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#a855f7);align-items:center;justify-content:center;font-size:13px">★</span>
+      ระบบฝ่ายบุคคล
+    </div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:3px" id="hr-welcome">—</div>
+  </div>
+
+  <!-- เมนู HR แบบการ์ด -->
+  <div style="display:grid;gap:10px">
+    <div class="hr-menu-card" id="hr-menu-dashboard">
+      <div class="hr-menu-icon" style="background:rgba(59,130,246,.15);color:var(--ac)">▦</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">ภาพรวมรายวัน</div>
+        <div class="hr-menu-desc">ใครมาแล้ว ใครยังไม่มา ใครมาสาย</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-employees">
+      <div class="hr-menu-icon" style="background:rgba(16,185,129,.15);color:var(--ok)">☷</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">จัดการพนักงาน</div>
+        <div class="hr-menu-desc">เพิ่ม/แก้ไข/เปลี่ยนกะ/คีย์เวลาย้อนหลัง</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-report">
+      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">▤</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงานรายบุคคล</div>
+        <div class="hr-menu-desc">ดูประวัติการลงเวลาของพนักงานแต่ละคน</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-export">
+      <div class="hr-menu-icon" style="background:rgba(168,85,247,.15);color:var(--ac2)">⤓</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">Export เงินเดือน</div>
+        <div class="hr-menu-desc">ดาวน์โหลดข้อมูลชั่วโมงทำงานตามช่วงเวลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-holiday">
+      <div class="hr-menu-icon" style="background:rgba(236,72,153,.15);color:var(--er)">◷</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">จัดการวันหยุด</div>
+        <div class="hr-menu-desc">บันทึกวันหยุดนักขัตฤกษ์/วันหยุดพิเศษ</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-face">
+      <div class="hr-menu-icon" style="background:rgba(37,99,235,.15);color:var(--ac)">☺</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">ลงทะเบียนใบหน้า</div>
+        <div class="hr-menu-desc">สำหรับพนักงานที่ไม่มีสมาร์ทโฟน</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-kiosk">
+      <div class="hr-menu-icon" style="background:rgba(5,150,105,.15);color:var(--ok)">⊙</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">เปิดโหมด Kiosk</div>
+        <div class="hr-menu-desc">เครื่องสแกนหน้าเช็คอิน/เอาต์</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HR DASHBOARD — ภาพรวมรายวัน ═══════════════ -->
+<div class="page" id="page-hr-dashboard">
+  <button id="hrdash-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:17px;font-weight:600">ภาพรวมประจำวัน</div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:2px" id="hrdash-datelabel">—</div>
+  </div>
+
+  <!-- การ์ดสรุป 4 ตัว (คลิกเพื่อกรองรายชื่อ) -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+    <div class="hd-card" data-filter="present">
+      <div class="hd-card-lbl">มาแล้ว</div>
+      <div class="hd-card-val" style="color:var(--ok)" id="hd-present">—</div>
+    </div>
+    <div class="hd-card" data-filter="absent">
+      <div class="hd-card-lbl">ยังไม่มา</div>
+      <div class="hd-card-val" style="color:var(--tx2)" id="hd-absent">—</div>
+    </div>
+    <div class="hd-card" data-filter="late">
+      <div class="hd-card-lbl">มาสาย</div>
+      <div class="hd-card-val" style="color:var(--wn)" id="hd-late">—</div>
+    </div>
+    <div class="hd-card" data-filter="no_checkout">
+      <div class="hd-card-lbl">ยังไม่ออก</div>
+      <div class="hd-card-val" style="color:var(--er)" id="hd-noout">—</div>
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--tx2);margin:16px 2px 8px;font-weight:500" id="hrdash-listlabel">รายชื่อ</div>
+
+  <div id="hrdash-loading" style="text-align:center;padding:30px 0;color:var(--tx3)">
+    <div class="spin dk" style="margin:0 auto 10px;display:block;width:20px;height:20px;border-width:3px"></div>
+    <div style="font-size:13px">กำลังโหลด...</div>
+  </div>
+
+  <div id="hrdash-list"></div>
+</div>
+
+<!-- ═══════════════ HR — จัดการพนักงาน ═══════════════ -->
+<div class="page" id="page-hr-employees">
+  <button id="hremp-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="font-size:17px;font-weight:600;margin-bottom:12px">จัดการพนักงาน</div>
+
+  <!-- ค้นหา -->
+  <div class="card" style="padding:14px">
+    <label style="font-size:12px;color:var(--tx2);display:block;margin-bottom:6px">ค้นหาด้วยรหัสพนักงาน</label>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="hremp-search" placeholder="เช่น EMP001" autocomplete="off" style="text-transform:uppercase;flex:1">
+      <button class="btn p" id="hremp-search-btn" style="width:auto;padding:0 18px">ค้นหา</button>
+    </div>
+  </div>
+
+  <!-- ผลลัพธ์ค้นหา / ฟอร์มแก้ไข -->
+  <div id="hremp-result" style="display:none">
+    <div class="card" style="padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div id="hremp-title" style="font-size:15px;font-weight:600">—</div>
+          <div id="hremp-status-line" style="font-size:11px;margin-top:2px">—</div>
+        </div>
+        <span id="hremp-mode-badge" style="font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px"></span>
+      </div>
+
+      <input type="hidden" id="hremp-empid-locked">
+
+      <div class="field"><label>รหัสพนักงาน (แก้ไม่ได้)</label>
+        <input class="inp" id="hremp-f-empid" disabled style="opacity:.6"></div>
+      <div class="field"><label>ชื่อ-นามสกุล</label>
+        <input class="inp" id="hremp-f-fullname" placeholder="ชื่อ นามสกุล"></div>
+      <div class="field"><label>คำนำหน้า</label>
+        <input class="inp" id="hremp-f-title" placeholder="นาย / นาง / นางสาว"></div>
+      <div class="field"><label>แผนก</label>
+        <input class="inp" id="hremp-f-department" placeholder="แผนก"></div>
+      <div class="field"><label>เบอร์โทร</label>
+        <input class="inp" id="hremp-f-phone" inputmode="tel" placeholder="08x-xxx-xxxx"></div>
+      <div class="field"><label>อีเมล</label>
+        <input class="inp" id="hremp-f-email" type="email" placeholder="email@example.com"></div>
+      <div class="field"><label>วันที่เริ่มงาน</label>
+        <input class="inp" id="hremp-f-startdate" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+      <div class="field"><label>กะ</label>
+        <select class="inp" id="hremp-f-shift">
+          <option value="A">A — เช้า (08:30–18:00)</option>
+          <option value="B">B — กลางคืน (20:30–06:00)</option>
+          <option value="CLEANING">CLEANING — แม่บ้าน</option>
+          <option value="FLEX">FLEX — ยืดหยุ่น</option>
+          <option value="DRIVER">DRIVER — คนขับรถผู้บริหาร</option>
+        </select></div>
+      <div class="field"><label>Payroll_ID (รหัสเงินเดือน)</label>
+        <input class="inp" id="hremp-f-payrollid" placeholder="รหัสในโปรแกรมเงินเดือน"></div>
+      <div class="field"><label>สิทธิ์ (Role)</label>
+        <input class="inp" id="hremp-f-role" disabled style="opacity:.6">
+        <div style="font-size:10px;color:var(--tx3);margin-top:4px">แก้สิทธิ์ HR ได้ที่ Google Sheet เท่านั้น (เพื่อความปลอดภัย)</div></div>
+
+      <button class="btn p" id="hremp-save" style="margin-top:6px">บันทึกข้อมูล</button>
+    </div>
+
+    <!-- ปุ่มจัดการพิเศษ (เฉพาะตอนแก้ไขคนที่มีอยู่) -->
+    <div class="card" id="hremp-actions" style="padding:14px">
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">จัดการบัญชี</div>
+      <div style="display:grid;gap:8px">
+        <button class="btn o" id="hremp-reset-device">รีเซ็ต Device (เปลี่ยนมือถือ)</button>
+        <button class="btn o" id="hremp-reset-pw">รีเซ็ตรหัสผ่าน (ลงทะเบียนใหม่)</button>
+        <button class="btn o" id="hremp-toggle-status">เปิด/ปิดบัญชี</button>
+      </div>
+    </div>
+
+    <!-- B4: Manual Entry คีย์เวลาย้อนหลัง -->
+    <div class="card" id="hremp-manual" style="padding:14px">
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500">คีย์เวลาย้อนหลัง (Manual Entry)</div>
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:12px;line-height:1.5">สำหรับพนักงานที่ออกนอกสถานที่ หรือลืมเช็คอิน/เอาต์ — ถ้าคีย์ IN ให้คนที่มี "ยังไม่เช็คอิน" ระบบจะจับคู่และคำนวณชั่วโมงให้อัตโนมัติ</div>
+      <div class="field"><label>วันที่</label>
+        <input class="inp" id="hrman-date" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+      <div style="display:flex;gap:8px">
+        <div class="field" style="flex:1"><label>ประเภท</label>
+          <select class="inp" id="hrman-type">
+            <option value="IN">เข้างาน (IN)</option>
+            <option value="OUT">ออกงาน (OUT)</option>
+          </select></div>
+        <div class="field" style="flex:1"><label>เวลา (HH:mm)</label>
+          <input class="inp" id="hrman-time" placeholder="08:30" inputmode="numeric" maxlength="5"></div>
+      </div>
+      <button class="btn p" id="hrman-submit" style="margin-top:6px">บันทึกเวลาย้อนหลัง</button>
+    </div>
+  </div>
+
+  <!-- ไม่พบ → เสนอเพิ่มใหม่ -->
+  <div id="hremp-notfound" style="display:none">
+    <div class="card" style="padding:16px;text-align:center">
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:12px" id="hremp-notfound-msg">ไม่พบรหัสนี้</div>
+      <button class="btn p" id="hremp-add-new">+ เพิ่มพนักงานใหม่</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HR EXPORT เงินเดือน ═══════════════ -->
+<div class="page" id="page-hr-export">
+  <button id="hrexp-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:17px;font-weight:600">Export เงินเดือน</div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:2px">ดาวน์โหลดเวลาเข้า-ออกเป็นไฟล์ .txt สำหรับโปรแกรมเงินเดือน</div>
+  </div>
+
+  <!-- ช่วงวันที่ -->
+  <div class="card" style="padding:14px">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">ช่วงวันที่</div>
+    <div style="display:flex;gap:8px">
+      <div class="field" style="flex:1;margin:0"><label>ตั้งแต่</label>
+        <input class="inp" id="hrexp-from" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+      <div class="field" style="flex:1;margin:0"><label>ถึง</label>
+        <input class="inp" id="hrexp-to" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+    </div>
+  </div>
+
+  <!-- เลือกพนักงาน -->
+  <div class="card" style="padding:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--tx2);font-weight:500">เลือกพนักงาน</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn o sm" id="hrexp-all">เลือกทั้งหมด</button>
+        <button class="btn o sm" id="hrexp-none">ล้าง</button>
+      </div>
+    </div>
+    <input class="inp" id="hrexp-search" placeholder="ค้นหาชื่อ..." style="margin-bottom:8px;font-size:13px">
+    <div id="hrexp-emplist" style="max-height:240px;overflow-y:auto">
+      <div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>
+    </div>
+    <div style="font-size:11px;color:var(--tx3);margin-top:8px" id="hrexp-count">เลือกแล้ว 0 คน</div>
+  </div>
+
+  <button class="btn p" id="hrexp-generate" style="margin-bottom:10px">สร้างไฟล์ Export</button>
+
+  <!-- ผลลัพธ์ -->
+  <div class="card" id="hrexp-result" style="display:none;padding:14px">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:8px;font-weight:500">ตัวอย่างข้อมูล (<span id="hrexp-linecount">0</span> บรรทัด)</div>
+    <pre id="hrexp-preview" style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:11px;font-family:var(--mo);overflow-x:auto;max-height:200px;overflow-y:auto;white-space:pre;color:var(--tx)"></pre>
+    <button class="btn p" id="hrexp-download" style="margin-top:10px">⤓ ดาวน์โหลดไฟล์ .txt</button>
+  </div>
+</div>
+
+<!-- ═══════════════ HR รายงาน ═══════════════ -->
+<div class="page" id="page-hr-report">
+  <button id="hrrep-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:17px;font-weight:600">รายงานการลงเวลา</div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:2px">ดูและดาวน์โหลดรายงานตามช่วงเวลาและสถานะ</div>
+  </div>
+
+  <!-- ช่วงวันที่ -->
+  <div class="card" style="padding:14px">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">ช่วงวันที่</div>
+    <div style="display:flex;gap:8px">
+      <div class="field" style="flex:1;margin:0"><label>ตั้งแต่</label>
+        <input class="inp" id="hrrep-from" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+      <div class="field" style="flex:1;margin:0"><label>ถึง</label>
+        <input class="inp" id="hrrep-to" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+    </div>
+  </div>
+
+  <!-- กรองสถานะ -->
+  <div class="card" style="padding:14px">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">สถานะ</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="hrrep-status-tabs">
+      <button class="rep-stat active" data-status="all">ทั้งหมด</button>
+      <button class="rep-stat" data-status="present">มาแล้ว</button>
+      <button class="rep-stat" data-status="late">มาสาย</button>
+      <button class="rep-stat" data-status="no_in">ไม่มีเข้า</button>
+      <button class="rep-stat" data-status="no_checkout">ไม่มีออก</button>
+      <button class="rep-stat" data-status="absent">ไม่มาทำงาน</button>
+    </div>
+  </div>
+
+  <!-- เลือกพนักงาน -->
+  <div class="card" style="padding:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--tx2);font-weight:500">เลือกพนักงาน</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn o sm" id="hrrep-all">เลือกทั้งหมด</button>
+        <button class="btn o sm" id="hrrep-none">ล้าง</button>
+      </div>
+    </div>
+    <input class="inp" id="hrrep-search" placeholder="ค้นหาชื่อ..." style="margin-bottom:8px;font-size:13px">
+    <div id="hrrep-emplist" style="max-height:200px;overflow-y:auto">
+      <div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>
+    </div>
+    <div style="font-size:11px;color:var(--tx3);margin-top:8px" id="hrrep-count">เลือกแล้ว 0 คน</div>
+  </div>
+
+  <button class="btn p" id="hrrep-generate" style="margin-bottom:10px">สร้างรายงาน</button>
+
+  <!-- ผลลัพธ์ -->
+  <div id="hrrep-result" style="display:none">
+    <!-- สรุป -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="card" style="padding:12px;text-align:center;margin:0">
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">จำนวนรายการ</div>
+        <div style="font-size:20px;font-weight:700;color:var(--ac)" id="hrrep-s-days">—</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;margin:0">
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">ไม่มีเข้า</div>
+        <div style="font-size:20px;font-weight:700;color:#fb923c" id="hrrep-s-noin">—</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;margin:0">
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">มาสาย</div>
+        <div style="font-size:20px;font-weight:700;color:var(--wn)" id="hrrep-s-late">—</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;margin:0">
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">ยังไม่ออก</div>
+        <div style="font-size:20px;font-weight:700;color:var(--er)" id="hrrep-s-noout">—</div>
+      </div>
+    </div>
+
+    <!-- ปุ่มดาวน์โหลด -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn o" id="hrrep-csv" style="flex:1">⤓ CSV</button>
+      <button class="btn o" id="hrrep-pdf" style="flex:1">⤓ PDF</button>
+    </div>
+
+    <!-- ตาราง -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="hrrep-table" style="overflow-x:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HR จัดการวันหยุด ═══════════════ -->
+<div class="page" id="page-hr-holiday">
+  <button id="hrhol-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:17px;font-weight:600">จัดการวันหยุด</div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:2px">วันหยุดนักขัตฤกษ์/พิเศษ (วันอาทิตย์ระบบตัดให้อัตโนมัติ)</div>
+  </div>
+
+  <!-- เพิ่มวันหยุด -->
+  <div class="card" style="padding:14px">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">เพิ่มวันหยุด</div>
+    <div class="field"><label>วันที่</label>
+      <input class="inp" id="hrhol-date" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+    <div class="field"><label>ชื่อวันหยุด</label>
+      <input class="inp" id="hrhol-name" placeholder="เช่น วันสงกรานต์"></div>
+    <button class="btn p" id="hrhol-add" style="margin-top:6px">+ เพิ่มวันหยุด</button>
+  </div>
+
+  <!-- รายการวันหยุด -->
+  <div style="font-size:12px;color:var(--tx2);margin:14px 2px 8px;font-weight:500">รายการวันหยุด (<span id="hrhol-count">0</span> วัน)</div>
+  <div id="hrhol-loading" style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>
+  <div id="hrhol-list"></div>
+</div>
+
+<!-- ═══════════════ HR ลงทะเบียนใบหน้า ═══════════════ -->
+<div class="page" id="page-hr-face">
+  <button id="hrface-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:17px;font-weight:600">ลงทะเบียนใบหน้า</div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:2px">ลงทะเบียนหน้าพนักงานที่ไม่มีสมาร์ทโฟน เพื่อใช้เครื่อง Kiosk</div>
+  </div>
+
+  <!-- สถานะการโหลด face-api -->
+  <div id="hrface-modelload" style="display:none;text-align:center;padding:16px;background:var(--sf2);border-radius:10px;margin-bottom:12px">
+    <div class="spin dk" style="margin:0 auto 8px;display:block;width:20px;height:20px;border-width:3px"></div>
+    <div style="font-size:12px;color:var(--tx2)">กำลังโหลดระบบจดจำใบหน้า... (ครั้งแรกอาจใช้เวลาสักครู่)</div>
+  </div>
+
+  <!-- ส่วนถ่ายภาพ (ซ่อนไว้จนกว่าจะเลือกคน) -->
+  <div id="hrface-capture" style="display:none">
+    <div class="card" style="padding:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="hrface-empname">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:12px" id="hrface-empmeta">—</div>
+      <div class="cam-wrap" id="hrface-camwrap" style="display:none">
+        <video id="hrface-video" autoplay muted playsinline></video>
+      </div>
+      <div id="hrface-status" style="text-align:center;font-size:12px;color:var(--tx2);margin:8px 0;min-height:18px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn o" id="hrface-cancel" style="flex:1">ยกเลิก</button>
+        <button class="btn p" id="hrface-capture-btn" style="flex:1;display:none">ถ่าย + ลงทะเบียน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- รายชื่อพนักงาน -->
+  <div id="hrface-listwrap">
+    <input class="inp" id="hrface-search" placeholder="ค้นหาชื่อ..." style="margin-bottom:10px;font-size:13px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:8px">
+      <span>รายชื่อพนักงาน</span>
+      <span id="hrface-count">ลงทะเบียนแล้ว 0/0</span>
+    </div>
+    <div id="hrface-loading" style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>
+    <div id="hrface-list"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="res-card">
+    <div class="r-icon" id="ri">✅</div>
+    <div class="r-title" id="rt">สำเร็จ!</div>
+    <div class="r-time" id="rtime">--:--:--</div>
+    <div id="rsum" style="display:none">
+      <div class="sum-grid">
+        <div class="s-item"><div class="s-lbl">เวลาเข้า</div><div class="s-val" id="s-in">—</div></div>
+        <div class="s-item"><div class="s-lbl">เวลาออก</div><div class="s-val" id="s-out">—</div></div>
+        <div class="s-item" style="grid-column:1/-1"><div class="s-lbl">รวม</div><div class="s-val" id="s-dur" style="color:var(--ok)">—</div></div>
+      </div>
+    </div>
+    <div class="r-sub" id="rsub"></div>
+    <button class="btn o sm" style="width:100%">ปิด</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="tmsg"></span></div>
+
+<script>
+// ============================================================
+//  WorkScan v7 - Client Side (GitHub Pages + GAS JSON API)
+// ============================================================
+
+// ── GAS Web App URL — endpoint หลักของระบบ ──────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P_EWCNuPUQepKClFj6L1nSfccYhLD6CUsYJwMcuxjS7Ab/exec';
+
+/** เรียก GAS function ผ่าน HTTP POST — คืนค่าเป็น Promise */
+function callAPI(action, payload) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: action, payload: payload || {} }),
+  }).then(res => {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  });
+}
+
+/**
+ * Shim ให้ใช้ syntax คล้าย google.script.run เดิม
+ * ใช้แบบ: gasRun('login', payload).withSuccessHandler(fn).withFailureHandler(fn2)
+ */
+function gasRun(action, payload) {
+  let successFn = null, failureFn = null;
+  callAPI(action, payload)
+    .then(result => { if (successFn) successFn(result); })
+    .catch(err => {
+      console.error('API error:', err);
+      if (failureFn) failureFn({ message: 'เชื่อมต่อ Server ไม่ได้ — ตรวจสอบอินเทอร์เน็ต' });
+    });
+  return {
+    withSuccessHandler(fn) { successFn = fn; return this; },
+    withFailureHandler(fn) { failureFn = fn; return this; },
+  };
+}
+
+// STATE
+const S = {
+  empId: '', name: '', fp: '',
+  cam: null, enrollB64: null,
+  lat: null, lng: null, acc: null,
+  verifiedEmpId: '',
+  forgotStep: 1,
+  checkedIn: false, inTime: null, inDate: null,
+  wInt: null,
+  histMonths: 1,
+  role: 'EMPLOYEE', hrToken: null,
+  shift: 'A', skipGps: false,
+  ciSelfie: null, coSelfie: null, ciCam: null, coCam: null
+};
+
+// CONSTANTS
+const RADIUS = 100;
+const GPS_ACCURACY_MAX = 150;
+const OFFICE = { lat: 13.449238475430999, lng: 101.03901280652984 };
+
+// ========== INIT ==========
+(function() {
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('th-TH', { hour12: false });
+  }, 1000);
+  S.fp = (() => {
+    let v = localStorage.getItem('ws6_fp');
+    if (!v) { v = 'D-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7).toUpperCase(); localStorage.setItem('ws6_fp', v); }
+    return v;
+  })();
+  startGPS();
+  // ลองกู้ session เดิม (ถ้ายังไม่หมดอายุ) — จะ login อัตโนมัติ
+  restoreSession();
+})();
+
+// ── SESSION (จำ login ไว้ 12 ชม. ครอบ 1 กะงาน) ──────────────
+const SESSION_TTL_MS = 12 * 3600 * 1000;
+
+function saveSession(loginResult) {
+  try {
+    const sess = {
+      empId:   loginResult.employeeId,
+      name:    loginResult.name,
+      role:    loginResult.role || 'EMPLOYEE',
+      shift:   loginResult.shift || 'A',
+      shiftLabel: loginResult.shiftLabel || '',
+      hrToken: loginResult.hrToken || null,
+      expire:  Date.now() + SESSION_TTL_MS,
+    };
+    localStorage.setItem('ws6_session', JSON.stringify(sess));
+  } catch(e) {}
+}
+
+function restoreSession() {
+  let sess;
+  try {
+    sess = JSON.parse(localStorage.getItem('ws6_session') || 'null');
+  } catch(e) { sess = null; }
+  if (!sess || !sess.empId) return;
+  // หมดอายุ → ล้างทิ้ง ให้ login ใหม่
+  if (Date.now() > sess.expire) { localStorage.removeItem('ws6_session'); return; }
+
+  // กู้ state แล้วเข้าหน้าที่เหมาะสม — แต่ต้อง refresh สถานะ session เช็คอินจาก server
+  S.empId = sess.empId; S.name = sess.name; S.role = sess.role;
+  S.shift = sess.shift; S.skipGps = (sess.shift === 'DRIVER');
+  S.hrToken = sess.hrToken;
+
+  showEmpStrip(sess.name, sess.empId, sess.shiftLabel);
+  applyRoleMenus(sess.role);
+  const lbl = document.getElementById('ci-lbl');
+  if (lbl) lbl.textContent = sess.name + ' · ' + sess.empId;
+
+  if (sess.role === 'HR') {
+    go('hr-dash');
+    return;
+  }
+
+  // EMPLOYEE: เช็คสถานะเช็คอินวันนี้จาก server ก่อนตัดสินหน้า
+  gasRun('getTodayStatus', { employeeId: sess.empId })
+    .withSuccessHandler(st => {
+      if (st && st.checkedIn && !st.checkedOut) {
+        S.checkedIn = true; S.inTime = st.inTime; S.inDate = st.inDate;
+        if (st.inTime) startWT(st.inTime, st.inDate);
+        go('checkout');
+      } else {
+        go('checkin');
+      }
+    })
+    .withFailureHandler(() => { go('checkin'); });
+}
+
+function logout() {
+  localStorage.removeItem('ws6_session');
+  location.reload();
+}
+
+// ========== DATE HELPERS ==========
+function maskDate(el) {
+  let raw = el.value.replace(/\D/g, '').slice(0, 8);
+  let out = '';
+  if (raw.length > 0) out = raw.slice(0, 2);
+  if (raw.length > 2) out += '/' + raw.slice(2, 4);
+  if (raw.length > 4) out += '/' + raw.slice(4, 8);
+  el.value = out;
+}
+function allowDateKeys(e) {
+  const ok = /^\d$/.test(e.key) || ['Backspace','Delete','Tab','ArrowLeft','ArrowRight'].includes(e.key);
+  if (!ok) e.preventDefault();
+}
+
+// ========== GPS ==========
+function haversineClient(lat, lng) {
+  const R = 6371000, r = Math.PI / 180;
+  const a = Math.sin((OFFICE.lat - lat) * r / 2) ** 2 +
+            Math.cos(lat * r) * Math.cos(OFFICE.lat * r) *
+            Math.sin((OFFICE.lng - lng) * r / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function startGPS() {
+  let gAngle = 0;
+  setInterval(() => {
+    gAngle += 0.012;
+    const r = 4 + Math.sin(gAngle * 3) * 2, cx = 50 + Math.cos(gAngle) * r, cy = 50 + Math.sin(gAngle) * r;
+    ['gdot-in', 'gdot-out'].forEach(id => { const e = document.getElementById(id); if (e) { e.style.left = cx + '%'; e.style.top = cy + '%'; } });
+  }, 100);
+
+  if (!navigator.geolocation) { updateGPSUI(null, null, null, 'browser ไม่รองรับ GPS'); return; }
+
+  navigator.geolocation.watchPosition(
+    pos => {
+      S.lat = pos.coords.latitude; S.lng = pos.coords.longitude; S.acc = Math.round(pos.coords.accuracy);
+      const dist = haversineClient(S.lat, S.lng);
+      const inZone = dist <= RADIUS;
+      const accWarn = S.acc > GPS_ACCURACY_MAX;
+      updateGPSUI(dist, S.acc, inZone, accWarn ? `สัญญาณ GPS ไม่แม่น (±${S.acc}ม.)` : null);
+    },
+    err => {
+      const msg = {1:'กรุณาอนุญาต Location',2:'ไม่พบสัญญาณ GPS',3:'GPS timeout'}[err.code] || 'GPS error';
+      updateGPSUI(null, null, false, msg);
+    },
+    { enableHighAccuracy: true, maximumAge: 8000, timeout: 20000 }
+  );
+}
+
+function updateGPSUI(dist, acc, inZone, warnMsg) {
+  // กะ DRIVER: แสดงพิกัดเป็นข้อมูลประกอบ ไม่ใช่เงื่อนไขผ่าน/ไม่ผ่าน
+  if (S.skipGps) {
+    ['in', 'out'].forEach(suf => {
+      const bg = document.getElementById('gbg-' + suf);
+      const gd = document.getElementById('gd-' + suf);
+      const ga = document.getElementById('gacc-' + suf);
+      if (bg) {
+        if (dist != null) { bg.textContent = 'บันทึกพิกัด ✓ (กะคนขับ)'; bg.className = 'badge ok'; }
+        else { bg.textContent = 'กำลังหาตำแหน่ง...'; bg.className = 'badge wn'; }
+      }
+      if (gd) gd.textContent = dist != null ? dist + ' ม. จากออฟฟิศ' : '— ม.';
+      if (ga) ga.textContent = acc != null ? '±' + acc + ' ม.' : '— ม.';
+    });
+    const st = document.getElementById('st-gps');
+    if (st) { st.className = 'stp pass'; st.innerHTML = '<span>✓</span><span>GPS (เก็บข้อมูล)</span>'; }
+    return;
+  }
+
+  ['in', 'out'].forEach(suf => {
+    const bg = document.getElementById('gbg-' + suf);
+    const gd = document.getElementById('gd-' + suf);
+    const ga = document.getElementById('gacc-' + suf);
+    if (bg) {
+      if (warnMsg && !inZone) { bg.textContent = dist != null ? `นอกพื้นที่ (${dist}ม.)` : warnMsg; bg.className = 'badge er'; }
+      else if (warnMsg && inZone) { bg.textContent = 'อยู่ในพื้นที่ (GPS ต่ำ)'; bg.className = 'badge wn'; }
+      else if (inZone) { bg.textContent = 'อยู่ในพื้นที่ ✓'; bg.className = 'badge ok'; }
+      else { bg.textContent = dist != null ? `นอกพื้นที่ ${dist}ม.` : 'กำลังหาตำแหน่ง...'; bg.className = dist != null ? 'badge er' : 'badge wn'; }
+    }
+    if (gd) gd.textContent = dist != null ? dist + ' ม.' : '— ม.';
+    if (ga) ga.textContent = acc != null ? '±' + acc + ' ม.' : '— ม.';
+  });
+  const st = document.getElementById('st-gps');
+  if (st) {
+    if (inZone) { st.className = 'stp pass'; st.innerHTML = '<span>✓</span><span>GPS ✓</span>'; }
+    else if (dist != null) { st.className = 'stp fail'; st.innerHTML = '<span>✗</span><span>นอกพื้นที่</span>'; }
+    else { st.className = 'stp'; st.innerHTML = '<span>⏳</span><span>GPS</span>'; }
+  }
+}
+
+// ========== NAVIGATION ==========
+// ── helper: แสดง employee strip หลัง login ─────────────────
+function showEmpStrip(name, empId, shiftLabel) {
+  const strip = document.getElementById('emp-strip');
+  if (!strip) return;
+  const initials = (name||'').split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase()||'?';
+  const av = document.getElementById('emp-avatar'); if(av) av.textContent = initials;
+  const ns = document.getElementById('emp-name-strip'); if(ns) ns.textContent = name||'';
+  const ms = document.getElementById('emp-meta-strip'); if(ms) ms.textContent = (empId||'') + (shiftLabel ? '  ·  '+shiftLabel : '');
+  strip.style.display = 'flex';
+  document.querySelectorAll('.page').forEach(p => p.classList.add('with-strip'));
+}
+
+function go(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + id);
+  if (!target) return;
+  // scroll-to-top ก่อน show — แก้ปัญหามือถือค้างที่ scroll position เดิม
+  target.scrollTop = 0;
+  void target.offsetHeight; // force reflow
+  target.classList.add('active');
+
+  // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face'];
+  const tabs = document.getElementById('nav-tabs');
+  if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
+
+  // sync tab highlight — หน้า HR ทั้งหมดให้แท็บ HR active
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active','co','ht'));
+  const m = { checkin:'tab-in', checkout:'tab-out', history:'tab-hist', 'hr-dash':'tab-hr-dash', 'hr-dashboard':'tab-hr-dash', 'hr-employees':'tab-hr-dash' };
+  if (m[id]) {
+    const t = document.getElementById(m[id]);
+    if (t) t.classList.add(id==='checkout'?'co': id==='history'?'ht':'active');
+  }
+
+  if (id === 'checkout' && S.inTime) {
+    const ref = document.getElementById('co-inref'); if(ref) ref.textContent = S.inTime;
+  }
+  if (id === 'history') loadHistory();
+  if (id === 'hr-dashboard') {
+    hrDashFilter = 'present';  // เริ่มที่การ์ดมาแล้วเสมอ
+    loadHrDashboard();
+  }
+  if (id === 'hr-export') {
+    loadExportPage();
+  }
+  if (id === 'hr-report') {
+    loadReportPage();
+  }
+  if (id === 'hr-holiday') {
+    loadHolidayPage();
+  }
+  if (id === 'hr-face') {
+    loadFacePage();
+  }
+  if (id === 'hr-employees') {
+    // เคลียร์ผลค้นหาเก่า
+    const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
+    const rs = document.getElementById('hremp-result'); if (rs) rs.style.display = 'none';
+    const nf = document.getElementById('hremp-notfound'); if (nf) nf.style.display = 'none';
+  }
+}
+
+function tab(id, el) { go(id); }
+
+/**
+ * จัดเมนูตาม role — ซ่อน/แสดงแท็บให้ตรงกับสิทธิ์
+ * HR: เห็นเฉพาะแท็บ HR (ไม่เห็น เช็คอิน/เอาต์/เวลา)
+ * EMPLOYEE: เห็นเฉพาะ เช็คอิน/เอาต์/เวลา (ไม่เห็น HR)
+ */
+function applyRoleMenus(role) {
+  const isHR = role === 'HR';
+  const empTabs = ['tab-in', 'tab-out', 'tab-hist'];
+  const hrTabs  = ['tab-hr-dash'];
+
+  empTabs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isHR ? 'none' : '';
+  });
+  hrTabs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isHR ? '' : 'none';
+  });
+
+  // ข้อความต้อนรับในหน้า HR
+  if (isHR) {
+    const w = document.getElementById('hr-welcome');
+    if (w) w.textContent = S.name + ' · ' + S.empId;
+  }
+}
+
+// ========== HR DASHBOARD ==========
+let hrDashData = null;        // เก็บข้อมูลที่โหลดมา
+let hrDashFilter = 'present'; // การ์ดที่เลือกอยู่ (default = มาแล้ว)
+
+function loadHrDashboard() {
+  document.getElementById('hrdash-loading').style.display = 'block';
+  document.getElementById('hrdash-list').innerHTML = '';
+  // วันปัจจุบันเสมอ (ไม่ต้องเลือกวัน)
+  const today = new Date().toISOString().slice(0, 10);
+  gasRun('hrGetDashboard', { hrToken: S.hrToken, date: today })
+    .withSuccessHandler(renderHrDashboard)
+    .withFailureHandler(e => {
+      document.getElementById('hrdash-loading').style.display = 'none';
+      showToast(e.message || 'โหลดข้อมูลไม่สำเร็จ');
+    });
+}
+
+function renderHrDashboard(r) {
+  document.getElementById('hrdash-loading').style.display = 'none';
+  if (!r || !r.success) {
+    showToast((r && r.message) || 'โหลดข้อมูลไม่สำเร็จ');
+    if (r && r.authError) { setTimeout(() => logout(), 1500); }
+    return;
+  }
+  hrDashData = r;
+
+  // แสดงวันที่ภาษาไทย
+  const dlabel = document.getElementById('hrdash-datelabel');
+  if (dlabel && r.date) {
+    const [y, m, d] = r.date.split('-');
+    const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    dlabel.textContent = `${parseInt(d)} ${thMonths[parseInt(m)-1]} ${parseInt(y)+543}`;
+  }
+
+  // อัปเดตตัวเลขการ์ด
+  const s = r.summary || {};
+  document.getElementById('hd-present').textContent = s.present || 0;
+  document.getElementById('hd-absent').textContent  = s.absent || 0;
+  document.getElementById('hd-late').textContent    = s.late || 0;
+  document.getElementById('hd-noout').textContent   = s.noCheckout || 0;
+
+  // แสดงรายชื่อตาม filter ที่เลือกอยู่
+  applyDashFilter(hrDashFilter);
+}
+
+function applyDashFilter(filter) {
+  hrDashFilter = filter;
+
+  // ไฮไลต์การ์ดที่เลือก
+  document.querySelectorAll('.hd-card').forEach(c => {
+    c.classList.toggle('sel', c.dataset.filter === filter);
+  });
+
+  if (!hrDashData) return;
+  const emps = hrDashData.employees || [];
+
+  // กรองตามสถานะ
+  let filtered, label;
+  if (filter === 'present') {
+    // "มาแล้ว" = ทุกคนที่ present (รวมสาย + ยังไม่ออก เพราะถือว่ามาแล้ว)
+    filtered = emps.filter(e => e.present);
+    label = 'รายชื่อคนที่มาแล้ว';
+  } else if (filter === 'absent') {
+    filtered = emps.filter(e => e.status === 'absent');
+    label = 'รายชื่อคนที่ยังไม่มา';
+  } else if (filter === 'late') {
+    filtered = emps.filter(e => e.late);
+    label = 'รายชื่อคนที่มาสาย';
+  } else if (filter === 'no_checkout') {
+    filtered = emps.filter(e => e.status === 'no_checkout');
+    label = 'รายชื่อคนที่ยังไม่เช็คเอาต์';
+  } else {
+    filtered = emps; label = 'รายชื่อทั้งหมด';
+  }
+
+  const ll = document.getElementById('hrdash-listlabel');
+  if (ll) ll.textContent = `${label} (${filtered.length} คน)`;
+
+  const badgeMap = {
+    absent:      { cls: 'hd-b-absent',  txt: 'ยังไม่มา' },
+    late:        { cls: 'hd-b-late',    txt: 'มาสาย' },
+    no_checkout: { cls: 'hd-b-noout',   txt: 'ยังไม่ออก' },
+    present:     { cls: 'hd-b-present', txt: 'ปกติ' },
+  };
+
+  const list = document.getElementById('hrdash-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--tx3);font-size:13px">ไม่มีรายชื่อในกลุ่มนี้</div>';
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(e => {
+    const b = badgeMap[e.status] || badgeMap.absent;
+    const times = (e.inTime || e.outTime)
+      ? `${e.inTime || '—'}${e.outTime ? ' → ' + e.outTime : ''}`
+      : '';
+    html += `<div class="hd-row">
+      <span class="hd-badge ${b.cls}">${b.txt}</span>
+      <div style="flex:1;min-width:0">
+        <div class="hd-name">${e.name}</div>
+        <div class="hd-meta">${e.empId} · ${e.department} · กะ ${e.shift}</div>
+      </div>
+      ${times ? `<div class="hd-times">${times}</div>` : ''}
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+// ========== HR — EXPORT เงินเดือน ==========
+let hrExpEmployees = [];        // รายชื่อทั้งหมด
+let hrExpSelected = {};         // empId -> true
+let hrExpContent = '';          // เนื้อหาไฟล์ที่ generate แล้ว
+let hrExpFilename = 'payroll.txt';
+
+function loadExportPage() {
+  // reset
+  hrExpSelected = {};
+  hrExpContent = '';
+  document.getElementById('hrexp-result').style.display = 'none';
+  document.getElementById('hrexp-search').value = '';
+  // ตั้งวันที่ default = เดือนปัจจุบัน (1 ถึงวันนี้)
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('hrexp-from').value = fmtDateTH(first);
+  document.getElementById('hrexp-to').value   = fmtDateTH(now);
+
+  // โหลดรายชื่อ
+  document.getElementById('hrexp-emplist').innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>';
+  gasRun('hrGetEmployeeList', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) {
+        showToast((r && r.message) || 'โหลดรายชื่อไม่สำเร็จ');
+        if (r && r.authError) setTimeout(() => logout(), 1500);
+        return;
+      }
+      hrExpEmployees = r.employees || [];
+      renderExpList('');
+    })
+    .withFailureHandler(e => showToast(e.message));
+}
+
+function fmtDateTH(d) {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function renderExpList(search) {
+  const list = document.getElementById('hrexp-emplist');
+  const q = (search || '').toLowerCase();
+  const filtered = hrExpEmployees.filter(e =>
+    !q || String(e.name).toLowerCase().includes(q) || String(e.empId).toLowerCase().includes(q)
+  );
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">ไม่พบพนักงาน</div>';
+    return;
+  }
+  let html = '';
+  filtered.forEach(e => {
+    const sel = hrExpSelected[e.empId] ? 'sel' : '';
+    const check = hrExpSelected[e.empId] ? '✓' : '';
+    const noPayroll = !e.payrollId ? ' <span style="color:var(--er)">(ไม่มี Payroll_ID)</span>' : '';
+    html += `<div class="exp-row ${sel}" data-id="${e.empId}">
+      <div class="exp-cb">${check}</div>
+      <div style="flex:1;min-width:0">
+        <div class="exp-nm">${e.name}</div>
+        <div class="exp-meta">${e.empId} · ${e.department} · กะ ${e.shift}${noPayroll}</div>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+  // bind clicks
+  list.querySelectorAll('.exp-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.id;
+      if (hrExpSelected[id]) delete hrExpSelected[id];
+      else hrExpSelected[id] = true;
+      renderExpList(document.getElementById('hrexp-search').value);
+      updateExpCount();
+    });
+  });
+}
+
+function updateExpCount() {
+  const n = Object.keys(hrExpSelected).length;
+  const total = hrExpEmployees.length;
+  document.getElementById('hrexp-count').textContent =
+    n === 0 ? `ยังไม่เลือก (ว่าง = ทุกคน ${total} คน)` : `เลือกแล้ว ${n} คน`;
+}
+
+function hrExpSelectAll() {
+  hrExpEmployees.forEach(e => { hrExpSelected[e.empId] = true; });
+  renderExpList(document.getElementById('hrexp-search').value);
+  updateExpCount();
+}
+function hrExpClearAll() {
+  hrExpSelected = {};
+  renderExpList(document.getElementById('hrexp-search').value);
+  updateExpCount();
+}
+
+function hrExpGenerate() {
+  const from = document.getElementById('hrexp-from').value.trim();
+  const to   = document.getElementById('hrexp-to').value.trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(from) || !/^\d{2}\/\d{2}\/\d{4}$/.test(to)) {
+    showToast('กรุณากรอกวันที่ให้ถูกต้อง (วว/ดด/ปปปป)'); return;
+  }
+  const ids = Object.keys(hrExpSelected);  // ว่าง = ทุกคน
+  const btn = document.getElementById('hrexp-generate');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังสร้าง...';
+  gasRun('hrExportPayroll', { hrToken: S.hrToken, dateFrom: from, dateTo: to, employeeIds: ids })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'สร้างไฟล์ Export';
+      if (!r || !r.success) {
+        showToast((r && r.message) || 'สร้างไฟล์ไม่สำเร็จ');
+        if (r && r.authError) setTimeout(() => logout(), 1500);
+        return;
+      }
+      if (r.lineCount === 0) { showToast('ไม่มีข้อมูลในช่วงที่เลือก'); return; }
+      hrExpContent = r.content;
+      hrExpFilename = r.filename || 'payroll.txt';
+      document.getElementById('hrexp-linecount').textContent = r.lineCount;
+      // แสดงตัวอย่าง 20 บรรทัดแรก
+      const preview = r.content.split('\r\n').slice(0, 20).join('\n');
+      document.getElementById('hrexp-preview').textContent = preview + (r.lineCount > 20 ? '\n...' : '');
+      document.getElementById('hrexp-result').style.display = 'block';
+      showToast(`สร้างไฟล์สำเร็จ ${r.lineCount} บรรทัด`, true);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'สร้างไฟล์ Export'; showToast(e.message); });
+}
+
+function hrExpDownload() {
+  if (!hrExpContent) { showToast('กรุณาสร้างไฟล์ก่อน'); return; }
+  // ใส่ BOM เผื่อโปรแกรมเงินเดือนอ่าน encoding — แต่ไฟล์ตัวอย่างไม่มี BOM จึงไม่ใส่
+  const blob = new Blob([hrExpContent], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = hrExpFilename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ========== HR — รายงาน ==========
+let hrRepEmployees = [];
+let hrRepSelected = {};
+let hrRepStatus = 'all';
+let hrRepData = null;   // ผลรายงานล่าสุด
+
+function loadReportPage() {
+  hrRepSelected = {};
+  hrRepStatus = 'all';
+  hrRepData = null;
+  document.getElementById('hrrep-result').style.display = 'none';
+  document.getElementById('hrrep-search').value = '';
+  // วันที่ default = เดือนปัจจุบัน
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('hrrep-from').value = fmtDateTH(first);
+  document.getElementById('hrrep-to').value   = fmtDateTH(now);
+  // reset status tabs
+  document.querySelectorAll('.rep-stat').forEach(b => b.classList.toggle('active', b.dataset.status === 'all'));
+
+  document.getElementById('hrrep-emplist').innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>';
+  gasRun('hrGetEmployeeList', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { showToast((r && r.message) || 'โหลดรายชื่อไม่สำเร็จ'); if (r && r.authError) setTimeout(() => logout(), 1500); return; }
+      hrRepEmployees = r.employees || [];
+      renderRepList('');
+    })
+    .withFailureHandler(e => showToast(e.message));
+}
+
+function renderRepList(search) {
+  const list = document.getElementById('hrrep-emplist');
+  const q = (search || '').toLowerCase();
+  const filtered = hrRepEmployees.filter(e => !q || String(e.name).toLowerCase().includes(q) || String(e.empId).toLowerCase().includes(q));
+  if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">ไม่พบพนักงาน</div>'; return; }
+  let html = '';
+  filtered.forEach(e => {
+    const sel = hrRepSelected[e.empId] ? 'sel' : '';
+    const check = hrRepSelected[e.empId] ? '✓' : '';
+    html += `<div class="exp-row ${sel}" data-id="${e.empId}">
+      <div class="exp-cb">${check}</div>
+      <div style="flex:1;min-width:0">
+        <div class="exp-nm">${e.name}</div>
+        <div class="exp-meta">${e.empId} · ${e.department} · กะ ${e.shift}</div>
+      </div></div>`;
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.exp-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.id;
+      if (hrRepSelected[id]) delete hrRepSelected[id]; else hrRepSelected[id] = true;
+      renderRepList(document.getElementById('hrrep-search').value);
+      updateRepCount();
+    });
+  });
+}
+
+function updateRepCount() {
+  const n = Object.keys(hrRepSelected).length;
+  document.getElementById('hrrep-count').textContent = n === 0 ? `ยังไม่เลือก (ว่าง = ทุกคน)` : `เลือกแล้ว ${n} คน`;
+}
+
+function hrRepSelectAll() { hrRepEmployees.forEach(e => { hrRepSelected[e.empId] = true; }); renderRepList(document.getElementById('hrrep-search').value); updateRepCount(); }
+function hrRepClearAll() { hrRepSelected = {}; renderRepList(document.getElementById('hrrep-search').value); updateRepCount(); }
+
+function hrRepGenerate() {
+  const from = document.getElementById('hrrep-from').value.trim();
+  const to   = document.getElementById('hrrep-to').value.trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(from) || !/^\d{2}\/\d{2}\/\d{4}$/.test(to)) { showToast('กรุณากรอกวันที่ให้ถูกต้อง'); return; }
+  const ids = Object.keys(hrRepSelected);
+  const btn = document.getElementById('hrrep-generate');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังสร้าง...';
+  gasRun('hrGetReport', { hrToken: S.hrToken, dateFrom: from, dateTo: to, employeeIds: ids, statusFilter: hrRepStatus })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'สร้างรายงาน';
+      if (!r || !r.success) { showToast((r && r.message) || 'สร้างรายงานไม่สำเร็จ'); if (r && r.authError) setTimeout(() => logout(), 1500); return; }
+      hrRepData = r;
+      renderReport(r);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'สร้างรายงาน'; showToast(e.message); });
+}
+
+function renderReport(r) {
+  const s = r.summary || {};
+  document.getElementById('hrrep-s-days').textContent  = s.totalRows || 0;
+  document.getElementById('hrrep-s-noin').textContent  = s.noIn || 0;
+  document.getElementById('hrrep-s-late').textContent  = s.late || 0;
+  document.getElementById('hrrep-s-noout').textContent = s.noCheckout || 0;
+
+  const rows = r.rows || [];
+  const badge = {
+    present:     '<span class="rep-bdg" style="background:rgba(16,185,129,.15);color:var(--ok)">ปกติ</span>',
+    late:        '<span class="rep-bdg" style="background:rgba(245,158,11,.15);color:var(--wn)">สาย</span>',
+    no_checkout: '<span class="rep-bdg" style="background:rgba(239,68,68,.12);color:var(--er)">ไม่มีออก</span>',
+    no_in:       '<span class="rep-bdg" style="background:rgba(251,146,60,.15);color:#fb923c">ไม่มีเข้า</span>',
+    absent:      '<span class="rep-bdg" style="background:rgba(120,120,130,.15);color:var(--tx2)">ไม่มา</span>',
+  };
+
+  let html = '<table class="rep-table"><thead><tr><th>ชื่อ</th><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สถานะ</th><th>ชม.</th></tr></thead><tbody>';
+  if (rows.length === 0) {
+    html += '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tx3)">ไม่มีข้อมูล</td></tr>';
+  } else {
+    rows.forEach(row => {
+      const [y,m,d] = row.date.split('-');
+      const dow = row.dow ? ` <span style="color:var(--tx3);font-size:9px">(${row.dow})</span>` : '';
+      html += `<tr>
+        <td>${row.name}<div style="font-size:9px;color:var(--tx3)">${row.empId}</div></td>
+        <td>${d}/${m}/${(+y)+543}${dow}</td>
+        <td>${row.inTime || '—'}</td>
+        <td>${row.outTime || '—'}</td>
+        <td>${badge[row.status] || ''}</td>
+        <td>${row.workHours ? row.workHours.toFixed(1) : '—'}</td>
+      </tr>`;
+    });
+  }
+  html += '</tbody></table>';
+  document.getElementById('hrrep-table').innerHTML = html;
+  document.getElementById('hrrep-result').style.display = 'block';
+}
+
+function hrRepDownloadCSV() {
+  if (!hrRepData || !hrRepData.rows) { showToast('กรุณาสร้างรายงานก่อน'); return; }
+  const statusTH = { present: 'ปกติ', late: 'มาสาย', no_checkout: 'ไม่มีออก', no_in: 'ไม่มีเข้า', absent: 'ไม่มาทำงาน' };
+  let csv = '\uFEFF';  // BOM ให้ Excel อ่านภาษาไทยถูก
+  csv += 'รหัส,ชื่อ,แผนก,กะ,วันที่,วัน,เวลาเข้า,เวลาออก,สถานะ,ชั่วโมง\r\n';
+  hrRepData.rows.forEach(r => {
+    const [y,m,d] = r.date.split('-');
+    const thDate = `${d}/${m}/${y}`;
+    csv += `${r.empId},"${r.name}","${r.department}",${r.shift},${thDate},${r.dow||''},${r.inTime||''},${r.outTime||''},${statusTH[r.status]||''},${r.workHours||0}\r\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `report_${hrRepData.dateFrom}_${hrRepData.dateTo}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function hrRepDownloadPDF() {
+  if (!hrRepData || !hrRepData.rows) { showToast('กรุณาสร้างรายงานก่อน'); return; }
+  const statusTH = { present: 'ปกติ', late: 'มาสาย', no_checkout: 'ไม่มีออก', no_in: 'ไม่มีเข้า', absent: 'ไม่มาทำงาน' };
+  const s = hrRepData.summary || {};
+  const [fy,fm,fd] = hrRepData.dateFrom.split('-');
+  const [ty,tm,td] = hrRepData.dateTo.split('-');
+  let rowsHtml = '';
+  hrRepData.rows.forEach(r => {
+    const [y,m,d] = r.date.split('-');
+    const dow = r.dow ? ` (${r.dow})` : '';
+    rowsHtml += `<tr><td>${r.empId}</td><td>${r.name}</td><td>${r.department}</td><td>${d}/${m}/${(+y)+543}${dow}</td><td>${r.inTime||'—'}</td><td>${r.outTime||'—'}</td><td>${statusTH[r.status]||''}</td><td style="text-align:right">${r.workHours?r.workHours.toFixed(1):'—'}</td></tr>`;
+  });
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>รายงานการลงเวลา</title>
+    <style>
+      body{font-family:'Sarabun','Tahoma',sans-serif;padding:24px;color:#222}
+      h1{font-size:18px;margin:0 0 4px}
+      .sub{font-size:12px;color:#666;margin-bottom:16px}
+      .sum{display:flex;gap:16px;margin-bottom:16px;font-size:12px;flex-wrap:wrap}
+      .sum div{background:#f3f4f6;padding:8px 14px;border-radius:6px}
+      table{width:100%;border-collapse:collapse;font-size:11px}
+      th{background:#f3f4f6;padding:6px;text-align:left;border:1px solid #ddd}
+      td{padding:5px 6px;border:1px solid #eee}
+      @media print{body{padding:0}}
+    </style></head><body>
+    <h1>รายงานการลงเวลา</h1>
+    <div class="sub">ช่วง ${fd}/${fm}/${(+fy)+543} – ${td}/${tm}/${(+ty)+543}</div>
+    <div class="sum">
+      <div>จำนวนรายการ <b>${s.totalRows||0}</b></div>
+      <div>ไม่มีเข้า <b>${s.noIn||0}</b></div>
+      <div>มาสาย <b>${s.late||0}</b></div>
+      <div>ยังไม่ออก <b>${s.noCheckout||0}</b></div>
+      <div>ไม่มาทำงาน <b>${s.absent||0}</b></div>
+    </div>
+    <table><thead><tr><th>รหัส</th><th>ชื่อ</th><th>แผนก</th><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สถานะ</th><th>ชม.</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+    </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+// ========== HR — จัดการวันหยุด ==========
+function loadHolidayPage() {
+  document.getElementById('hrhol-date').value = '';
+  document.getElementById('hrhol-name').value = '';
+  document.getElementById('hrhol-loading').style.display = 'block';
+  document.getElementById('hrhol-list').innerHTML = '';
+  gasRun('hrGetHolidays', { hrToken: S.hrToken })
+    .withSuccessHandler(renderHolidays)
+    .withFailureHandler(e => { document.getElementById('hrhol-loading').style.display = 'none'; showToast(e.message); });
+}
+
+function renderHolidays(r) {
+  document.getElementById('hrhol-loading').style.display = 'none';
+  if (!r || !r.success) {
+    showToast((r && r.message) || 'โหลดวันหยุดไม่สำเร็จ');
+    if (r && r.authError) setTimeout(() => logout(), 1500);
+    return;
+  }
+  const holidays = r.holidays || [];
+  document.getElementById('hrhol-count').textContent = holidays.length;
+  const list = document.getElementById('hrhol-list');
+  if (holidays.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--tx3);font-size:13px">ยังไม่มีวันหยุด</div>';
+    return;
+  }
+  let html = '';
+  holidays.forEach(h => {
+    const [y, m, d] = h.date.split('-');
+    const thDate = `${d}/${m}/${(+y)+543}`;
+    html += `<div class="hd-row">
+      <div style="flex:1;min-width:0">
+        <div class="hd-name">${h.name}</div>
+        <div class="hd-meta">${thDate} (${h.dow})</div>
+      </div>
+      <button class="btn o sm hrhol-del" data-date="${h.date}" style="color:var(--er);border-color:var(--er)">ลบ</button>
+    </div>`;
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.hrhol-del').forEach(btn => {
+    btn.addEventListener('click', () => hrDeleteHoliday(btn.dataset.date));
+  });
+}
+
+function hrAddHoliday() {
+  const date = document.getElementById('hrhol-date').value.trim();
+  const name = document.getElementById('hrhol-name').value.trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date)) { showToast('วันที่ต้องเป็น วว/ดด/ปปปป'); return; }
+  if (!name) { showToast('กรุณากรอกชื่อวันหยุด'); return; }
+  const btn = document.getElementById('hrhol-add');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> บันทึก...';
+  gasRun('hrAddHoliday', { hrToken: S.hrToken, date: date, name: name })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = '+ เพิ่มวันหยุด';
+      showToast(r.message, r.success);
+      if (r.success) loadHolidayPage();
+      else if (r.authError) setTimeout(() => logout(), 1500);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = '+ เพิ่มวันหยุด'; showToast(e.message); });
+}
+
+function hrDeleteHoliday(date) {
+  if (!confirm('ลบวันหยุดนี้?')) return;
+  gasRun('hrDeleteHoliday', { hrToken: S.hrToken, date: date })
+    .withSuccessHandler(r => {
+      showToast(r.message, r.success);
+      if (r.success) loadHolidayPage();
+      else if (r.authError) setTimeout(() => logout(), 1500);
+    })
+    .withFailureHandler(e => showToast(e.message));
+}
+
+// ========== FACE-API.JS LOADER (โหลดครั้งเดียว แบบ lazy) ==========
+const FACEAPI_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js';
+const FACEAPI_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+let faceApiReady = false;
+let faceApiLoading = false;
+
+function loadFaceApi() {
+  return new Promise((resolve, reject) => {
+    if (faceApiReady) { resolve(); return; }
+    if (faceApiLoading) {
+      // รอจนโหลดเสร็จ
+      const iv = setInterval(() => { if (faceApiReady) { clearInterval(iv); resolve(); } }, 200);
+      return;
+    }
+    faceApiLoading = true;
+    // โหลด script
+    const script = document.createElement('script');
+    script.src = FACEAPI_CDN;
+    script.onload = async () => {
+      try {
+        // โหลด model ที่จำเป็น: detector + landmark + recognition
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(FACEAPI_MODELS);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODELS);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(FACEAPI_MODELS);
+        faceApiReady = true;
+        faceApiLoading = false;
+        resolve();
+      } catch (e) {
+        faceApiLoading = false;
+        reject(new Error('โหลด model ไม่สำเร็จ: ' + e.message));
+      }
+    };
+    script.onerror = () => { faceApiLoading = false; reject(new Error('โหลด face-api.js ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต')); };
+    document.head.appendChild(script);
+  });
+}
+
+// ตรวจจับใบหน้าจาก video → คืน descriptor (128 จุด) หรือ null
+async function detectFaceDescriptor(videoEl) {
+  const result = await faceapi
+    .detectSingleFace(videoEl)
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+  if (!result) return null;
+  return Array.from(result.descriptor);  // Float32Array → array
+}
+
+// ========== HR — ลงทะเบียนใบหน้า ==========
+let hrFaceEmployees = [];
+let hrFaceSelected = null;   // {empId, name, ...}
+let hrFaceCam = null;
+
+function loadFacePage() {
+  hrFaceSelected = null;
+  document.getElementById('hrface-capture').style.display = 'none';
+  document.getElementById('hrface-listwrap').style.display = 'block';
+  document.getElementById('hrface-search').value = '';
+
+  // เริ่มโหลด face-api เบื้องหลัง
+  document.getElementById('hrface-modelload').style.display = 'block';
+  loadFaceApi()
+    .then(() => { document.getElementById('hrface-modelload').style.display = 'none'; })
+    .catch(e => {
+      document.getElementById('hrface-modelload').style.display = 'none';
+      showToast(e.message);
+    });
+
+  // โหลดรายชื่อ
+  document.getElementById('hrface-loading').style.display = 'block';
+  document.getElementById('hrface-list').innerHTML = '';
+  gasRun('hrGetFaceList', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      document.getElementById('hrface-loading').style.display = 'none';
+      if (!r || !r.success) { showToast((r && r.message) || 'โหลดรายชื่อไม่สำเร็จ'); if (r && r.authError) setTimeout(() => logout(), 1500); return; }
+      hrFaceEmployees = r.employees || [];
+      document.getElementById('hrface-count').textContent = `ลงทะเบียนแล้ว ${r.registered}/${r.total}`;
+      renderFaceList('');
+    })
+    .withFailureHandler(e => { document.getElementById('hrface-loading').style.display = 'none'; showToast(e.message); });
+}
+
+function renderFaceList(search) {
+  const q = (search || '').toLowerCase();
+  const filtered = hrFaceEmployees.filter(e => !q || String(e.name).toLowerCase().includes(q) || String(e.empId).toLowerCase().includes(q));
+  const list = document.getElementById('hrface-list');
+  if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">ไม่พบพนักงาน</div>'; return; }
+  let html = '';
+  filtered.forEach(e => {
+    const badge = e.hasFace
+      ? '<span class="hd-badge hd-b-present">✓ ลงแล้ว</span>'
+      : '<span class="hd-badge hd-b-absent">ยังไม่ลง</span>';
+    html += `<div class="hd-row" data-id="${e.empId}" style="cursor:pointer">
+      ${badge}
+      <div style="flex:1;min-width:0">
+        <div class="hd-name">${e.name}</div>
+        <div class="hd-meta">${e.empId} · ${e.department} · กะ ${e.shift}</div>
+      </div>
+      <span style="font-size:18px;color:var(--tx3)">›</span>
+    </div>`;
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.hd-row').forEach(row => {
+    row.addEventListener('click', () => startFaceCapture(row.dataset.id));
+  });
+}
+
+function startFaceCapture(empId) {
+  const emp = hrFaceEmployees.find(e => e.empId === empId);
+  if (!emp) return;
+  if (!faceApiReady) { showToast('ระบบจดจำใบหน้ายังโหลดไม่เสร็จ รอสักครู่'); return; }
+  hrFaceSelected = emp;
+
+  document.getElementById('hrface-listwrap').style.display = 'none';
+  document.getElementById('hrface-capture').style.display = 'block';
+  document.getElementById('hrface-empname').textContent = emp.name + (emp.hasFace ? ' (ลงทะเบียนแล้ว — ถ่ายใหม่เพื่ออัปเดต)' : '');
+  document.getElementById('hrface-empmeta').textContent = `${emp.empId} · ${emp.department} · กะ ${emp.shift}`;
+  document.getElementById('hrface-status').textContent = 'กำลังเปิดกล้อง...';
+
+  // เปิดกล้อง
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: {ideal:640}, height: {ideal:480} } })
+    .then(stream => {
+      hrFaceCam = stream;
+      const wrap = document.getElementById('hrface-camwrap'); wrap.style.display = 'block';
+      const v = document.getElementById('hrface-video'); v.srcObject = stream;
+      document.getElementById('hrface-capture-btn').style.display = 'block';
+      document.getElementById('hrface-status').textContent = 'จัดใบหน้าให้อยู่กลางกรอบ แล้วกดถ่าย';
+    })
+    .catch(err => {
+      document.getElementById('hrface-status').textContent = '';
+      showToast(err.name === 'NotAllowedError' ? 'กล้องถูกบล็อก — อนุญาตใน Settings' : 'ไม่พบกล้อง');
+    });
+}
+
+function stopFaceCam() {
+  if (hrFaceCam) { hrFaceCam.getTracks().forEach(t => t.stop()); hrFaceCam = null; }
+}
+
+function cancelFaceCapture() {
+  stopFaceCam();
+  document.getElementById('hrface-capture').style.display = 'none';
+  document.getElementById('hrface-listwrap').style.display = 'block';
+  hrFaceSelected = null;
+}
+
+async function captureFace() {
+  if (!hrFaceSelected) return;
+  const v = document.getElementById('hrface-video');
+  if (!v || !v.srcObject) { showToast('กล้องยังไม่พร้อม'); return; }
+  const btn = document.getElementById('hrface-capture-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังตรวจจับ...';
+  document.getElementById('hrface-status').textContent = 'กำลังวิเคราะห์ใบหน้า...';
+
+  try {
+    const descriptor = await detectFaceDescriptor(v);
+    if (!descriptor) {
+      btn.disabled = false; btn.textContent = 'ถ่าย + ลงทะเบียน';
+      document.getElementById('hrface-status').textContent = '✗ ไม่พบใบหน้า ลองจัดตำแหน่งใหม่ให้ชัดขึ้น';
+      showToast('ไม่พบใบหน้าในภาพ ลองใหม่');
+      return;
+    }
+    // ส่งไปเก็บ
+    document.getElementById('hrface-status').textContent = 'กำลังบันทึก...';
+    gasRun('hrSaveFaceDescriptor', { hrToken: S.hrToken, employeeId: hrFaceSelected.empId, descriptor: descriptor })
+      .withSuccessHandler(r => {
+        btn.disabled = false; btn.textContent = 'ถ่าย + ลงทะเบียน';
+        showToast(r.message, r.success);
+        if (r.success) {
+          stopFaceCam();
+          // อัปเดตสถานะในรายการ
+          const emp = hrFaceEmployees.find(e => e.empId === hrFaceSelected.empId);
+          if (emp) emp.hasFace = true;
+          cancelFaceCapture();
+          const done = hrFaceEmployees.filter(e => e.hasFace).length;
+          document.getElementById('hrface-count').textContent = `ลงทะเบียนแล้ว ${done}/${hrFaceEmployees.length}`;
+          renderFaceList(document.getElementById('hrface-search').value);
+        } else if (r.authError) setTimeout(() => logout(), 1500);
+      })
+      .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ถ่าย + ลงทะเบียน'; showToast(e.message); document.getElementById('hrface-status').textContent = ''; });
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'ถ่าย + ลงทะเบียน';
+    document.getElementById('hrface-status').textContent = '✗ เกิดข้อผิดพลาด';
+    showToast('ตรวจจับใบหน้าผิดพลาด: ' + e.message);
+  }
+}
+
+// ========== HR — จัดการพนักงาน ==========
+let hremp_mode = null;   // 'edit' | 'add'
+
+function hrSearchEmployee() {
+  const id = document.getElementById('hremp-search').value.trim().toUpperCase();
+  if (!id) { showToast('กรุณากรอกรหัสพนักงาน'); return; }
+  const btn = document.getElementById('hremp-search-btn');
+  btn.disabled = true; btn.textContent = '...';
+  document.getElementById('hremp-result').style.display = 'none';
+  document.getElementById('hremp-notfound').style.display = 'none';
+
+  gasRun('hrFindEmployee', { hrToken: S.hrToken, employeeId: id })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'ค้นหา';
+      if (r && r.success) {
+        fillEmployeeForm(r.employee, 'edit');
+      } else if (r && r.notFound) {
+        document.getElementById('hremp-notfound-msg').textContent = 'ไม่พบรหัส ' + id + ' ในระบบ';
+        document.getElementById('hremp-notfound').style.display = 'block';
+        if (r.authError) setTimeout(() => logout(), 1500);
+      } else {
+        showToast((r && r.message) || 'ค้นหาไม่สำเร็จ');
+        if (r && r.authError) setTimeout(() => logout(), 1500);
+      }
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ค้นหา'; showToast(e.message); });
+}
+
+function fillEmployeeForm(emp, mode) {
+  hremp_mode = mode;
+  document.getElementById('hremp-result').style.display = 'block';
+  document.getElementById('hremp-notfound').style.display = 'none';
+
+  // โหมด edit = มีคนอยู่แล้ว, add = เพิ่มใหม่
+  const badge = document.getElementById('hremp-mode-badge');
+  const actions = document.getElementById('hremp-actions');
+  const manual = document.getElementById('hremp-manual');
+  const empidField = document.getElementById('hremp-f-empid');
+
+  // Manual Entry แสดงเฉพาะโหมด edit (คนที่มีอยู่จริง)
+  if (manual) manual.style.display = (mode === 'edit') ? 'block' : 'none';
+
+  if (mode === 'edit') {
+    badge.textContent = 'แก้ไข';
+    badge.style.background = 'rgba(37,99,235,.12)'; badge.style.color = 'var(--ac)';
+    actions.style.display = 'block';
+    empidField.disabled = true; empidField.style.opacity = '.6';
+    document.getElementById('hremp-title').textContent = emp.fullName || emp.employeeId;
+    const stTxt = emp.status === 'ACTIVE' ? 'ใช้งานอยู่' : emp.status === 'PENDING' ? 'รอลงทะเบียน' : 'ปิดบัญชี';
+    const stCol = emp.status === 'ACTIVE' ? 'var(--ok)' : emp.status === 'PENDING' ? 'var(--wn)' : 'var(--er)';
+    const sl = document.getElementById('hremp-status-line');
+    sl.textContent = stTxt + (emp.hasDevice ? ' · ผูกอุปกรณ์แล้ว' : ' · ยังไม่ผูกอุปกรณ์');
+    sl.style.color = stCol;
+  } else {
+    badge.textContent = 'เพิ่มใหม่';
+    badge.style.background = 'rgba(5,150,105,.12)'; badge.style.color = 'var(--ok)';
+    actions.style.display = 'none';
+    empidField.disabled = false; empidField.style.opacity = '1';
+    document.getElementById('hremp-title').textContent = 'พนักงานใหม่';
+    document.getElementById('hremp-status-line').textContent = 'สถานะจะเป็น PENDING รอพนักงานลงทะเบียน';
+    document.getElementById('hremp-status-line').style.color = 'var(--tx3)';
+  }
+
+  // เติมค่าในฟอร์ม
+  document.getElementById('hremp-f-empid').value      = emp.employeeId || '';
+  document.getElementById('hremp-empid-locked').value = emp.employeeId || '';
+  document.getElementById('hremp-f-fullname').value   = emp.fullName || '';
+  document.getElementById('hremp-f-title').value      = emp.title || '';
+  document.getElementById('hremp-f-department').value = emp.department || '';
+  document.getElementById('hremp-f-phone').value      = emp.phone || '';
+  document.getElementById('hremp-f-email').value      = emp.email || '';
+  // วันที่: yyyy-MM-dd → วว/ดด/ปปปป
+  document.getElementById('hremp-f-startdate').value  = emp.startDate ? thaiDateDisplay(emp.startDate) : '';
+  document.getElementById('hremp-f-shift').value      = emp.shift || 'A';
+  document.getElementById('hremp-f-payrollid').value  = emp.payrollId || '';
+  document.getElementById('hremp-f-role').value       = emp.role || 'EMPLOYEE';
+
+  // toggle status button label
+  if (mode === 'edit') {
+    const tb = document.getElementById('hremp-toggle-status');
+    tb.textContent = emp.status === 'INACTIVE' ? 'เปิดบัญชีอีกครั้ง' : 'ปิดบัญชี (ลาออก)';
+    tb.dataset.current = emp.status;
+  }
+}
+
+// แปลง yyyy-MM-dd → dd/MM/yyyy สำหรับแสดง
+function thaiDateDisplay(isoDate) {
+  if (!isoDate || isoDate.indexOf('-') === -1) return isoDate || '';
+  const [y, m, d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function hrCollectFields() {
+  return {
+    fullName:   document.getElementById('hremp-f-fullname').value.trim(),
+    title:      document.getElementById('hremp-f-title').value.trim(),
+    department: document.getElementById('hremp-f-department').value.trim(),
+    phone:      document.getElementById('hremp-f-phone').value.trim(),
+    email:      document.getElementById('hremp-f-email').value.trim(),
+    startDate:  document.getElementById('hremp-f-startdate').value.trim(),
+    shift:      document.getElementById('hremp-f-shift').value,
+    payrollId:  document.getElementById('hremp-f-payrollid').value.trim(),
+  };
+}
+
+function hrSaveEmployee() {
+  const fields = hrCollectFields();
+  const btn = document.getElementById('hremp-save');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> บันทึก...';
+
+  if (hremp_mode === 'add') {
+    fields.employeeId = document.getElementById('hremp-f-empid').value.trim().toUpperCase();
+    if (!fields.employeeId) { btn.disabled = false; btn.textContent = 'บันทึกข้อมูล'; showToast('กรุณากรอกรหัสพนักงาน'); return; }
+    gasRun('hrAddEmployee', { hrToken: S.hrToken, fields: fields })
+      .withSuccessHandler(r => {
+        btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
+        showToast(r.message, r.success);
+        if (r.success) { document.getElementById('hremp-result').style.display = 'none'; document.getElementById('hremp-search').value = ''; }
+        if (r.authError) setTimeout(() => logout(), 1500);
+      })
+      .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'บันทึกข้อมูล'; showToast(e.message); });
+  } else {
+    const empId = document.getElementById('hremp-empid-locked').value;
+    gasRun('hrUpdateEmployee', { hrToken: S.hrToken, employeeId: empId, fields: fields })
+      .withSuccessHandler(r => {
+        btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
+        showToast(r.message, r.success);
+        if (r.authError) setTimeout(() => logout(), 1500);
+      })
+      .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'บันทึกข้อมูล'; showToast(e.message); });
+  }
+}
+
+function hrEmpAction(action, confirmMsg) {
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  const empId = document.getElementById('hremp-empid-locked').value;
+  const fields = { _action: action };
+  gasRun('hrUpdateEmployee', { hrToken: S.hrToken, employeeId: empId, fields: fields })
+    .withSuccessHandler(r => {
+      showToast(r.message, r.success);
+      if (r.success) hrSearchEmployeeById(empId);  // reload
+      if (r.authError) setTimeout(() => logout(), 1500);
+    })
+    .withFailureHandler(e => showToast(e.message));
+}
+
+function hrSearchEmployeeById(id) {
+  document.getElementById('hremp-search').value = id;
+  hrSearchEmployee();
+}
+
+function hrToggleStatus() {
+  const tb = document.getElementById('hremp-toggle-status');
+  const current = tb.dataset.current;
+  const empId = document.getElementById('hremp-empid-locked').value;
+  const newStatus = current === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
+  const msg = newStatus === 'INACTIVE'
+    ? 'ปิดบัญชีพนักงานคนนี้? (พนักงานจะ login ไม่ได้ แต่กู้คืนได้ภายหลัง)'
+    : 'เปิดบัญชีพนักงานคนนี้อีกครั้ง?';
+  if (!confirm(msg)) return;
+  gasRun('hrUpdateEmployee', { hrToken: S.hrToken, employeeId: empId, fields: { status: newStatus } })
+    .withSuccessHandler(r => {
+      showToast(r.success ? (newStatus === 'INACTIVE' ? 'ปิดบัญชีเรียบร้อย' : 'เปิดบัญชีเรียบร้อย') : r.message, r.success);
+      if (r.success) hrSearchEmployeeById(empId);
+      if (r.authError) setTimeout(() => logout(), 1500);
+    })
+    .withFailureHandler(e => showToast(e.message));
+}
+
+function hrAddNewEmployee() {
+  // เปิดฟอร์มเปล่า โดยใช้รหัสที่ค้นหา
+  const id = document.getElementById('hremp-search').value.trim().toUpperCase();
+  fillEmployeeForm({ employeeId: id, shift: 'A', role: 'EMPLOYEE', status: 'PENDING' }, 'add');
+}
+
+// ── B4: Manual Entry ──
+function maskTime(el) {
+  let raw = el.value.replace(/\D/g, '').slice(0, 4);
+  if (raw.length >= 3) el.value = raw.slice(0, 2) + ':' + raw.slice(2);
+  else el.value = raw;
+}
+
+function hrSubmitManual() {
+  const empId = document.getElementById('hremp-empid-locked').value;
+  if (!empId) { showToast('กรุณาค้นหาพนักงานก่อน'); return; }
+  const date = document.getElementById('hrman-date').value.trim();
+  const type = document.getElementById('hrman-type').value;
+  const time = document.getElementById('hrman-time').value.trim();
+  if (!date || !time) { showToast('กรุณากรอกวันที่และเวลา'); return; }
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date)) { showToast('วันที่ต้องเป็น วว/ดด/ปปปป'); return; }
+  if (!/^\d{1,2}:\d{2}$/.test(time)) { showToast('เวลาต้องเป็น HH:mm เช่น 08:30'); return; }
+
+  const btn = document.getElementById('hrman-submit');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> บันทึก...';
+  gasRun('hrManualEntry', { hrToken: S.hrToken, employeeId: empId, date: date, type: type, time: time })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'บันทึกเวลาย้อนหลัง';
+      showToast(r.message, r.success);
+      if (r.success) {
+        document.getElementById('hrman-date').value = '';
+        document.getElementById('hrman-time').value = '';
+      }
+      if (r.authError) setTimeout(() => logout(), 1500);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'บันทึกเวลาย้อนหลัง'; showToast(e.message); });
+}
+
+// helper: ค้นหาซ้ำด้วย id (ใช้หลัง toggle status)
+function hrSearchEmployeeById(id) {
+  document.getElementById('hremp-search').value = id;
+  hrSearchEmployee();
+}
+
+
+// ========== ENROLLMENT ==========
+function setEB(n) {
+  [1, 2, 3].forEach(i => {
+    document.getElementById('es' + i).style.display = i === n ? 'block' : 'none';
+    const s = document.getElementById('eb' + i);
+    s.className = 'sb-step' + (i < n ? ' done' : i === n ? ' cur' : '');
+    s.querySelector('.sb-dot').textContent = i < n ? '✓' : i;
+  });
+}
+
+function doVerifyIdentity() {
+  const empId = document.getElementById('e-empid').value.trim();
+  const startDate = document.getElementById('e-startdate').value.trim();
+  const email = document.getElementById('e-email').value.trim();
+  if (!empId || !startDate || !email) { showToast('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return; }
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(startDate)) { showToast('กรุณากรอกวันที่ในรูปแบบ วว/ดด/ปปปป'); return; }
+  const btn = document.getElementById('btn-verify');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังตรวจสอบ...';
+  gasRun('verifyIdentity', { employeeId: empId, startDate, email })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'ตรวจสอบข้อมูล';
+      if (!r.success) { showToast(r.message); return; }
+      S.verifiedEmpId = r.employeeId;
+      document.getElementById('verified-name').textContent = r.name;
+      setEB(2);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ตรวจสอบข้อมูล'; showToast(e.message); });
+}
+
+function openEnrollCam() {
+  navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'user', width: {ideal:640}, height: {ideal:480} } })
+    .then(stream => {
+      S.cam = stream;
+      const wrap = document.getElementById('e-cam-wrap'); if (wrap) wrap.style.display = 'block';
+      const v = document.getElementById('v-enroll'); if (v) v.srcObject = stream;
+      document.getElementById('btn-snap').style.display = 'flex';
+      document.getElementById('btn-open-cam-e').style.display = 'none';
+    })
+    .catch(err => {
+      showToast(err.name === 'NotAllowedError' ? 'กล้องถูกบล็อก — ไปที่ Settings → อนุญาต Camera' : 'ไม่พบกล้อง');
+    });
+}
+
+// ── กล้องสำหรับเช็คอิน/เช็คเอาต์ (พารามิเตอร์ which = 'ci' หรือ 'co') ──
+function openCam(which) {
+  const vidId  = which === 'ci' ? 'v-in' : 'v-out';
+  const wrapId = which === 'ci' ? 'ci-cam-wrap' : 'co-cam-wrap';
+  navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'user', width: {ideal:720}, height: {ideal:960} } })
+    .then(stream => {
+      if (which === 'ci') S.ciCam = stream; else S.coCam = stream;
+      const wrap = document.getElementById(wrapId); if (wrap) wrap.style.display = 'block';
+      const v = document.getElementById(vidId); if (v) v.srcObject = stream;
+      document.getElementById(which + '-snap').style.display = 'block';
+      document.getElementById(which + '-open-cam').style.display = 'none';
+    })
+    .catch(err => {
+      showToast(err.name === 'NotAllowedError' ? 'กล้องถูกบล็อก — ไปที่ Settings → อนุญาต Camera' : 'ไม่พบกล้อง');
+    });
+}
+
+// ── ตรวจว่ามีใบหน้าจริงในภาพไหม ──────────────────────────────
+// ใช้ FaceDetector API (ฟรี ในเบราว์เซอร์) ถ้าไม่รองรับ → ตรวจความสว่างแทน
+async function hasFace(canvas) {
+  // ── วิธีที่ 1: FaceDetector API (ถ้าใช้ได้จริง) ──
+  if ('FaceDetector' in window) {
+    try {
+      const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+      const faces = await detector.detect(canvas);
+      // เชื่อผลเฉพาะเมื่อ "เจอหน้า" — ถ้าเจอ ผ่านเลย
+      if (faces && faces.length > 0) return true;
+      // ถ้าไม่เจอ อย่าเพิ่งปฏิเสธ — ตกไปตรวจด้วยวิธี 2 เผื่อ detector ไม่แม่น
+    } catch (e) {
+      // detector พัง→ ตกไปวิธี 2
+    }
+  }
+
+  // ── วิธีที่ 2: ตรวจโทนสีผิว + ความหลากหลายของภาพ ──
+  // หลักการ: ภาพที่มีใบหน้าคน จะมี "พิกเซลสีผิว" เป็นสัดส่วนพอควร
+  // และมีความต่างของความสว่าง (ไม่เรียบเป็นผนังสีเดียว)
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const data = ctx.getImageData(0, 0, W, H).data;
+
+  let sum = 0, sumSq = 0, n = 0, skin = 0;
+  for (let i = 0; i < data.length; i += 16) { // sample ทุก 4 px
+    const r = data[i], g = data[i+1], b = data[i+2];
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    sum += lum; sumSq += lum*lum; n++;
+
+    // ── ตรวจว่าเป็นโทนสีผิวไหม (ครอบหลายเฉดผิว) ──
+    // เกณฑ์ skin-tone มาตรฐาน: R>95, G>40, B>20, R>G>B, R-G เด่น
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (r > 95 && g > 40 && b > 20 &&
+        (mx - mn) > 15 &&
+        r > g && g > b &&
+        (r - g) > 15) {
+      skin++;
+    }
+  }
+  const mean = sum / n;
+  const variance = sumSq / n - mean * mean;
+  const skinRatio = skin / n;
+
+  // เงื่อนไขผ่าน (ต้องครบทุกข้อ):
+  //  - ไม่มืดเกินไป (mean > 30)
+  //  - มีรายละเอียด ไม่เรียบเป็นผนัง (variance > 250)
+  //  - มีพื้นที่สีผิวอย่างน้อย 6% ของภาพ (สัญญาณว่ามีหน้า/มือคน)
+  const okBrightness = mean > 30;
+  const okDetail     = variance > 250;
+  const okSkin       = skinRatio > 0.06;
+
+  return okBrightness && okDetail && okSkin;
+}
+
+async function snapCam(which) {
+  const vidId = which === 'ci' ? 'v-in' : 'v-out';
+  const v = document.getElementById(vidId);
+  if (!v || !v.srcObject) { showToast('กรุณาเปิดกล้องก่อน'); return; }
+  const c = document.createElement('canvas'); c.width = 480; c.height = 640;
+  c.getContext('2d').drawImage(v, 0, 0, 480, 640);
+
+  // ── ตรวจใบหน้าก่อนยอมรับภาพ ──
+  const snapBtn = document.getElementById(which + '-snap');
+  const prevText = snapBtn.textContent;
+  snapBtn.disabled = true; snapBtn.textContent = 'กำลังตรวจใบหน้า...';
+  const faceOk = await hasFace(c);
+  snapBtn.disabled = false; snapBtn.textContent = prevText;
+  if (!faceOk) {
+    showToast('ไม่พบใบหน้าในภาพ — กรุณาให้เห็นหน้าชัดเจนในกรอบ');
+    return;
+  }
+
+  const b64 = c.toDataURL('image/jpeg', 0.8);
+  if (which === 'ci') S.ciSelfie = b64; else S.coSelfie = b64;
+
+  document.getElementById(which + '-selfie-thumb').src = b64;
+  document.getElementById(which + '-selfie-done').style.display = 'flex';
+  document.getElementById(which + '-cam-wrap').style.display = 'none';
+  document.getElementById(which + '-snap').style.display = 'none';
+
+  // หยุดกล้อง
+  const cam = which === 'ci' ? S.ciCam : S.coCam;
+  if (cam) { cam.getTracks().forEach(t => t.stop()); }
+
+  // อัปเดต step indicator
+  const st = document.getElementById('st-selfie');
+  if (which === 'ci' && st) { st.className = 'stp pass'; st.innerHTML = '<span>✓</span><span>Selfie ✓</span>'; }
+}
+
+function retakeCam(which) {
+  if (which === 'ci') S.ciSelfie = null; else S.coSelfie = null;
+  document.getElementById(which + '-selfie-done').style.display = 'none';
+  document.getElementById(which + '-open-cam').style.display = 'block';
+  const st = document.getElementById('st-selfie');
+  if (which === 'ci' && st) { st.className = 'stp'; st.innerHTML = '<span>⏳</span><span>Selfie</span>'; }
+}
+
+async function snapEnroll() {
+  const v = document.getElementById('v-enroll');
+  if (v && v.srcObject) {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 240;
+    c.getContext('2d').drawImage(v, 0, 0, 320, 240);
+
+    // ตรวจใบหน้าก่อน
+    const snapBtn = document.getElementById('btn-snap');
+    const prev = snapBtn.textContent;
+    snapBtn.disabled = true; snapBtn.textContent = 'กำลังตรวจใบหน้า...';
+    const faceOk = await hasFace(c);
+    snapBtn.disabled = false; snapBtn.textContent = prev;
+    if (!faceOk) { showToast('ไม่พบใบหน้าในภาพ — กรุณาให้เห็นหน้าชัดเจน'); return; }
+
+    S.enrollB64 = c.toDataURL('image/jpeg', 0.75);
+    document.getElementById('selfie-thumb').src = S.enrollB64;
+    document.getElementById('selfie-thumb').style.display = 'block';
+    document.getElementById('selfie-done').style.display = 'flex';
+    document.getElementById('e-cam-wrap').style.display = 'none';
+    document.getElementById('btn-snap').style.display = 'none';
+    document.getElementById('btn-reg').disabled = false;
+  } else {
+    showToast('กรุณาเปิดกล้องก่อน');
+  }
+}
+
+function retake() {
+  S.enrollB64 = null;
+  document.getElementById('selfie-done').style.display = 'none';
+  document.getElementById('selfie-thumb').style.display = 'none';
+  document.getElementById('e-cam-wrap').style.display = 'block';
+  document.getElementById('btn-snap').style.display = 'flex';
+  document.getElementById('btn-reg').disabled = true;
+}
+
+function doActivate() {
+  const pw  = document.getElementById('e-pw').value;
+  const pw2 = document.getElementById('e-pw2').value;
+  if (!pw || pw.length < 6) { showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+  if (pw !== pw2) { showToast('รหัสผ่านทั้งสองช่องไม่ตรงกัน'); return; }
+  if (!S.enrollB64) { showToast('กรุณาถ่าย Selfie เพื่อลงทะเบียน'); return; }
+  const btn = document.getElementById('btn-reg');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังลงทะเบียน...';
+  gasRun('activateAccount', { employeeId: S.verifiedEmpId, password: pw, selfieBase64: S.enrollB64, deviceFingerprint: S.fp })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'ลงทะเบียนเลย ✓';
+      if (!r.success) { showToast(r.message); return; }
+      document.getElementById('done-id').textContent = r.employeeId;
+      setEB(3);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ลงทะเบียนเลย ✓'; showToast(e.message); });
+}
+
+// ========== LOGIN ==========
+function doLogin() {
+  const id = document.getElementById('login-id').value.trim().toUpperCase();
+  const pw = document.getElementById('login-pw').value;
+  const btn = document.getElementById('btn-login');
+  if (!id || !pw) { showToast('กรุณากรอกรหัสพนักงานและรหัสผ่าน'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  gasRun('login', { employeeId: id, password: pw, deviceFingerprint: S.fp })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+      if (!r || !r.success) { showToast((r && r.message) || 'เข้าสู่ระบบไม่สำเร็จ'); return; }
+      S.empId = r.employeeId; S.name = r.name;
+      S.role = r.role || 'EMPLOYEE';
+      S.hrToken = r.hrToken || null;
+      S.shift = r.shift || 'A';
+      S.skipGps = (r.shift === 'DRIVER');  // กะคนขับ — ไม่ต้อง block GPS ฝั่ง client
+      S.checkedIn = r.checkedIn || false;
+      S.inTime = r.inTime || null; S.inDate = r.inDate || null;
+
+      // บันทึก session ไว้ — refresh ในช่วง TTL ไม่ต้อง login ใหม่
+      saveSession(r);
+
+      // แสดงชื่อพนักงานบน strip
+      showEmpStrip(r.name, r.employeeId, r.shiftLabel);
+
+      // อัปเดต ci-lbl ด้วย (แสดงใต้ปุ่มเช็คอิน)
+      const lbl = document.getElementById('ci-lbl');
+      if (lbl) lbl.textContent = r.name + ' · ' + r.employeeId;
+
+      // จัดเมนูตาม role
+      applyRoleMenus(S.role);
+
+      // navigate — ใช้ setTimeout เพื่อให้ browser mobile render ทัน
+      setTimeout(() => {
+        if (S.role === 'HR') {
+          go('hr-dash');
+        } else if (r.checkedIn && !r.checkedOut) {
+          if (r.inTime) startWT(r.inTime, r.inDate);
+          go('checkout');
+        } else {
+          go('checkin');
+        }
+      }, 50);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; showToast(e.message || 'เกิดข้อผิดพลาด'); });
+}
+
+// ========== FORGOT PASSWORD ==========
+function doForgot() {
+  const btn = document.getElementById('btn-fp');
+  const id    = document.getElementById('fp-id').value.trim().toUpperCase();
+  const date  = document.getElementById('fp-date').value.trim();
+  const email = document.getElementById('fp-email').value.trim();
+  if (S.forgotStep === 1) {
+    if (!id || !date || !email) { showToast('กรุณากรอกข้อมูลให้ครบ'); return; }
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date)) { showToast('กรุณากรอกวันที่ในรูปแบบ วว/ดด/ปปปป'); return; }
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังตรวจสอบ...';
+    gasRun('verifyIdentity', { employeeId: id, startDate: date, email })
+      .withSuccessHandler(r => {
+        btn.disabled = false; btn.textContent = 'บันทึกรหัสผ่านใหม่';
+        if (!r.success && r.message !== 'รหัสพนักงานนี้ลงทะเบียนแล้ว กรุณา Login') { showToast(r.message); return; }
+        S.forgotStep = 2;
+        document.getElementById('fp-pw-card').style.display = 'block';
+        showToast('ยืนยันตัวตนสำเร็จ — กรุณาตั้งรหัสผ่านใหม่', true);
+      })
+      .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ยืนยัน'; showToast(e.message); });
+    return;
+  }
+  const newpw  = document.getElementById('fp-newpw').value;
+  const newpw2 = document.getElementById('fp-newpw2').value;
+  if (!newpw || newpw.length < 6) { showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+  if (newpw !== newpw2) { showToast('รหัสผ่านทั้งสองช่องไม่ตรงกัน'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังบันทึก...';
+  gasRun('resetPassword', { employeeId: id, startDate: date, email, newPassword: newpw })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'ยืนยัน';
+      if (!r.success) { showToast(r.message); return; }
+      S.forgotStep = 1; showToast(r.message, true);
+      setTimeout(() => go('welcome'), 1500);
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'ยืนยัน'; showToast(e.message); });
+}
+
+// ========== HISTORY ==========
+function loadHistory(months) {
+  if (!S.empId) return;
+  // ถ้าไม่ส่ง months มา ใช้ค่าที่เลือกล่าสุด (default 1)
+  if (months) S.histMonths = months;
+  if (!S.histMonths) S.histMonths = 1;
+
+  // update label + ปุ่ม active
+  const lbl = document.getElementById('hist-range-label');
+  if (lbl) lbl.textContent = 'ย้อนหลัง ' + S.histMonths + ' เดือน';
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.months, 10) === S.histMonths);
+  });
+
+  document.getElementById('hist-loading').style.display = 'block';
+  document.getElementById('hist-card').style.display = 'none';
+  gasRun('getMyAttendance', { employeeId: S.empId, months: S.histMonths })
+    .withSuccessHandler(renderHistory)
+    .withFailureHandler(e => { document.getElementById('hist-loading').style.display = 'none'; showToast(e.message); });
+}
+
+function renderHistory(r) {
+  document.getElementById('hist-loading').style.display = 'none';
+  if (!r) { showToast('ไม่ได้รับข้อมูลจาก server'); return; }
+  if (!r.success) { showToast(r.message || 'โหลดข้อมูลไม่สำเร็จ'); return; }
+
+  const titleEl = document.getElementById('hist-title');
+  if (titleEl) titleEl.textContent = 'ประวัติ — ' + (r.name || S.name || '');
+
+  const rows = Array.isArray(r.rows) ? r.rows : [];
+
+  // ── สรุปจาก server (นับเฉพาะ record สมบูรณ์แล้ว) ──
+  const sum = r.summary || { worked: 0, late: 0, noCheckout: 0 };
+  const hd = document.getElementById('h-days');   if (hd) hd.textContent = sum.worked;
+  const hl = document.getElementById('h-late');   if (hl) hl.textContent = sum.late;
+  const hn = document.getElementById('h-noout');  if (hn) hn.textContent = sum.needFix != null ? sum.needFix : (sum.noCheckout || 0);
+
+  const card = document.getElementById('hist-card');
+  const body = document.getElementById('hist-body');
+  if (!card || !body) return;
+
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="hist-empty">ไม่มีข้อมูลการลงเวลาในช่วงนี้</div>';
+    card.style.display = 'block';
+    return;
+  }
+
+  let html = '<table class="hist-table"><thead><tr><th>วัน/เวลา</th><th>ประเภท</th><th>สถานะ</th><th>ชั่วโมง</th></tr></thead><tbody>';
+  let lastDate = '';
+  rows.forEach(row => {
+    if (!row || !row.date) return;
+    // ใช้ displayDate จัดกลุ่ม (กะข้ามวัน: OUT จะอยู่ใต้วันของ IN)
+    const groupDate = row.displayDate || row.date;
+    const isNewDay = groupDate !== lastDate; lastDate = groupDate;
+    const [yr, mo, dy] = (groupDate || '--').split('-');
+    const thDate = dy && mo && yr ? `${dy}/${mo}/${yr}` : groupDate;
+    const timeShort = row.time ? row.time.slice(0, 5) : '—';
+    // ถ้า OUT อยู่คนละวันกับกลุ่ม (ข้ามวัน) แสดงวันจริงเล็กๆ ต่อท้ายเวลา
+    let crossNote = '';
+    if (row.type === 'OUT' && row.displayDate && row.date !== row.displayDate) {
+      const [, om, od] = row.date.split('-');
+      crossNote = ` <span style="font-size:9px;color:var(--tx3)">(+${od}/${om})</span>`;
+    }
+    let statusHtml = '';
+    const st = row.status || 'OK';
+    if (st === 'OK') statusHtml = '<span class="status-ok">✓ ปกติ</span>';
+    else if (st.startsWith('LATE')) statusHtml = `<span class="status-late">⏰ ${st.replace('LATE ','สาย ')}</span>`;
+    else if (st === 'OUT_NO_IN') statusHtml = '<span class="status-err">⚠ รอเช็คอิน (แจ้ง HR)</span>';
+    else if (st === 'MANUAL') statusHtml = '<span class="status-late">✎ คีย์โดย HR</span>';
+    else statusHtml = `<span class="status-err">✗ ${st}</span>`;
+    const typeHtml = row.type === 'IN' ? '<span class="type-in">เข้า</span>' : '<span class="type-out">ออก</span>';
+    const durHtml = row.duration ? `<span style="font-size:11px;color:var(--ok)">${row.duration}</span>` : '—';
+    const dim = row.complete === false ? 'opacity:.5' : '';
+    html += `<tr style="${isNewDay?'border-top:2px solid var(--bd2);':''}${dim}"><td><div class="hist-date">${thDate}</div><div style="font-family:var(--mo);font-size:13px;color:var(--tx)">${timeShort}${crossNote}</div></td><td>${typeHtml}</td><td>${statusHtml}</td><td>${durHtml}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  body.innerHTML = html;
+  card.style.display = 'block';
+}
+
+// ========== WORK TIMER ==========
+function startWT(inStr, inDate) {
+  if (S.wInt) clearInterval(S.wInt);
+  const inMs = new Date(`${inDate || todayStr()}T${inStr}`).getTime();
+  S.wInt = setInterval(() => {
+    const d = Math.max(0, Date.now() - inMs) / 1000;
+    document.getElementById('work-timer').textContent =
+      String(Math.floor(d / 3600)).padStart(2, '0') + ':' +
+      String(Math.floor((d % 3600) / 60)).padStart(2, '0') + ':' +
+      String(Math.floor(d % 60)).padStart(2, '0');
+    document.getElementById('work-prog').style.width = Math.min(100, Math.round((d / (8 * 3600)) * 100)) + '%';
+  }, 1000);
+}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+// ========== CHECK-IN / CHECK-OUT (no selfie required) ==========
+function doCheckin() {
+  // กะ DRIVER ข้าม GPS check ฝั่ง client (แต่ยังส่งพิกัดถ้ามี)
+  if (!S.skipGps) {
+    if (S.lat == null) { showToast('กรุณารอ GPS lock ก่อน (ดูสถานะด้านบน)'); return; }
+    if (S.acc != null && S.acc > GPS_ACCURACY_MAX) { showToast(`สัญญาณ GPS ไม่แม่น (±${S.acc}ม.) ลองออกจากอาคาร`); return; }
+  }
+  if (!S.ciSelfie) { showToast('กรุณาถ่าย Selfie ยืนยันตัวตนก่อนเช็คอิน'); return; }
+  const btn = document.getElementById('btn-ci');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังยืนยัน...';
+  gasRun('checkIn', { employeeId: S.empId, lat: S.lat, lng: S.lng, selfieBase64: S.ciSelfie, deviceFingerprint: S.fp })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'เช็คอินเข้างาน';
+      if (!r.success) { showToast(r.message); return; }
+      S.checkedIn = true; S.inTime = r.time; S.inDate = r.date;
+      document.getElementById('co-inref').textContent = r.time;
+      startWT(r.time, r.date);
+      const sub = r.isLate
+        ? `${r.name}\nมาสาย ${r.lateMin} นาที\nเช็คอินเรียบร้อย ไม่ต้องเช็คเอาต์ก็ได้`
+        : `${r.name}\nบันทึกเวลาเข้างานเรียบร้อย\nเช็คอินครั้งเดียวพอ ไม่ต้องเช็คเอาต์`;
+      showRes({ icon: '✅', title: 'เช็คอินสำเร็จ!', time: r.time, tc: 'var(--ok)', sub });
+      resetSelfieUI('ci');   // เคลียร์ selfie + กล้อง พร้อมเช็คครั้งใหม่
+      // ไม่ auto-redirect ไปหน้าเช็คเอาต์ — พนักงานเช็คอินแล้วจบเลย
+      // (จะเช็คเอาต์ตอนเลิกงานก็กดแท็บเช็คเอาต์เองได้)
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'เช็คอินเข้างาน'; showToast(e.message); });
+}
+
+function doCheckout() {
+  if (!S.skipGps && S.lat == null) { showToast('กรุณารอ GPS lock ก่อน'); return; }
+  if (!S.coSelfie) { showToast('กรุณาถ่าย Selfie ยืนยันตัวตนก่อนเช็คเอาต์'); return; }
+  const btn = document.getElementById('btn-co');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังยืนยัน...';
+  gasRun('checkOut', { employeeId: S.empId, lat: S.lat, lng: S.lng, selfieBase64: S.coSelfie, deviceFingerprint: S.fp })
+    .withSuccessHandler(r => {
+      btn.disabled = false; btn.textContent = 'เช็คเอาต์ออกงาน';
+      if (!r.success) { showToast(r.message); return; }
+      if (S.wInt) { clearInterval(S.wInt); S.wInt = null; }
+      if (r.outWithoutIn) {
+        // เช็คเอาต์สำเร็จแต่ไม่มีเช็คอิน — เตือนให้แจ้ง HR
+        showRes({
+          icon: '⚠️',
+          title: 'เช็คเอาต์สำเร็จ (ไม่มีเช็คอิน)',
+          time: r.time,
+          tc: 'var(--wn)',
+          sub: r.name + '\nระบบไม่พบการเช็คอินของวันนี้\nกรุณาแจ้ง HR เพื่อคีย์เวลาเข้างานย้อนหลัง'
+        });
+      } else {
+        showRes({ icon: '🏁', title: 'เช็คเอาต์สำเร็จ!', time: r.time, tc: 'var(--er)', summary: { in: S.inTime, out: r.time, dur: r.duration }, sub: r.name + '\nบันทึกเวลาออกงานเรียบร้อย' });
+      }
+      resetSelfieUI('co');   // เคลียร์ selfie + กล้อง
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'เช็คเอาต์ออกงาน'; showToast(e.message); });
+}
+
+// เคลียร์ selfie state + UI กล้องกลับสภาพพร้อมถ่ายใหม่
+function resetSelfieUI(which) {
+  if (which === 'ci') S.ciSelfie = null; else S.coSelfie = null;
+  // ปิดกล้องถ้ายังเปิดค้างอยู่
+  const cam = which === 'ci' ? S.ciCam : S.coCam;
+  if (cam) { cam.getTracks().forEach(t => t.stop()); if (which === 'ci') S.ciCam = null; else S.coCam = null; }
+  const done = document.getElementById(which + '-selfie-done');
+  const wrap = document.getElementById(which + '-cam-wrap');
+  const open = document.getElementById(which + '-open-cam');
+  const snap = document.getElementById(which + '-snap');
+  if (done) done.style.display = 'none';
+  if (wrap) wrap.style.display = 'none';
+  if (open) open.style.display = 'block';
+  if (snap) snap.style.display = 'none';
+  const st = document.getElementById('st-selfie');
+  if (which === 'ci' && st) { st.className = 'stp'; st.innerHTML = '<span>⏳</span><span>Selfie</span>'; }
+}
+
+// ========== UI HELPERS ==========
+function showRes(o) {
+  document.getElementById('ri').textContent = o.icon;
+  document.getElementById('rt').textContent = o.title;
+  document.getElementById('rtime').textContent = o.time;
+  document.getElementById('rtime').style.color = o.tc;
+  document.getElementById('rsub').textContent = o.sub;
+  const s = document.getElementById('rsum');
+  if (o.summary) { s.style.display = 'block'; document.getElementById('s-in').textContent = o.summary.in || '—'; document.getElementById('s-out').textContent = o.summary.out || '—'; document.getElementById('s-dur').textContent = o.summary.dur || '—'; }
+  else s.style.display = 'none';
+  document.getElementById('overlay').classList.add('show');
+}
+function closeOv() { document.getElementById('overlay').classList.remove('show'); }
+let _tt;
+function showToast(msg, ok) {
+  const el = document.getElementById('toast');
+  document.getElementById('tmsg').textContent = msg;
+  el.style.borderColor = ok ? 'var(--ok)' : 'var(--er)';
+  el.style.color = ok ? 'var(--ok)' : 'var(--er)';
+  el.classList.add('show'); clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+setEB(1);
+
+// ============================================================
+//  EVENT BINDINGS — ผูกทุก handler ผ่าน addEventListener
+//  แก้ปัญหา GAS sandbox ทำให้ onclick inline หา function ไม่เจอ
+// ============================================================
+(function bindAll() {
+  function on(id, evt, fn) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(evt, fn);
+  }
+
+  // NAV TABS
+  on('tab-in',   'click', function() { tab('checkin',  document.getElementById('tab-in')); });
+  on('tab-out',  'click', function() { tab('checkout', document.getElementById('tab-out')); });
+  on('tab-hist', 'click', function() { tab('history',  document.getElementById('tab-hist')); });
+  on('tab-hr-dash', 'click', function() { go('hr-dash'); });
+
+  // HR menu cards
+  on('hr-menu-dashboard', 'click', function() { go('hr-dashboard'); });
+  on('hr-menu-employees', 'click', function() { go('hr-employees'); });
+  on('hr-menu-report',    'click', function() { go('hr-report'); });
+
+  // HR รายงาน
+  on('hrrep-back', 'click', function() { go('hr-dash'); });
+  on('hrrep-from', 'input', function() { maskDate(this); });
+  on('hrrep-from', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrrep-to', 'input', function() { maskDate(this); });
+  on('hrrep-to', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrrep-search', 'input', function() { renderRepList(this.value); });
+  on('hrrep-all', 'click', hrRepSelectAll);
+  on('hrrep-none', 'click', hrRepClearAll);
+  on('hrrep-generate', 'click', hrRepGenerate);
+  on('hrrep-csv', 'click', hrRepDownloadCSV);
+  on('hrrep-pdf', 'click', hrRepDownloadPDF);
+  document.querySelectorAll('.rep-stat').forEach(function(b) {
+    b.addEventListener('click', function() {
+      hrRepStatus = b.dataset.status;
+      document.querySelectorAll('.rep-stat').forEach(x => x.classList.toggle('active', x === b));
+    });
+  });
+  on('hr-menu-export',    'click', function() { go('hr-export'); });
+  on('hr-menu-holiday',   'click', function() { go('hr-holiday'); });
+  on('hr-menu-face',      'click', function() { go('hr-face'); });
+  on('hr-menu-kiosk',     'click', function() { showToast('โหมด Kiosk — จะเพิ่มในเฟส 2'); });
+
+  // HR ลงทะเบียนใบหน้า
+  on('hrface-back', 'click', function() { stopFaceCam(); go('hr-dash'); });
+  on('hrface-search', 'input', function() { renderFaceList(this.value); });
+  on('hrface-cancel', 'click', cancelFaceCapture);
+  on('hrface-capture-btn', 'click', captureFace);
+
+  // HR จัดการวันหยุด
+  on('hrhol-back', 'click', function() { go('hr-dash'); });
+  on('hrhol-date', 'input', function() { maskDate(this); });
+  on('hrhol-date', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrhol-add', 'click', hrAddHoliday);
+
+  // HR Export เงินเดือน
+  on('hrexp-back', 'click', function() { go('hr-dash'); });
+  on('hrexp-from', 'input', function() { maskDate(this); });
+  on('hrexp-from', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrexp-to', 'input', function() { maskDate(this); });
+  on('hrexp-to', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrexp-search', 'input', function() { renderExpList(this.value); });
+  on('hrexp-all', 'click', hrExpSelectAll);
+  on('hrexp-none', 'click', hrExpClearAll);
+  on('hrexp-generate', 'click', hrExpGenerate);
+  on('hrexp-download', 'click', hrExpDownload);
+
+  // HR Dashboard
+  on('hrdash-back', 'click', function() { go('hr-dash'); });
+  // คลิกการ์ดเพื่อกรองรายชื่อ
+  document.querySelectorAll('.hd-card').forEach(function(card) {
+    card.addEventListener('click', function() { applyDashFilter(card.dataset.filter); });
+  });
+
+  // HR จัดการพนักงาน
+  on('hremp-back', 'click', function() { go('hr-dash'); });
+  on('hremp-search-btn', 'click', hrSearchEmployee);
+  on('hremp-search', 'input', function() { this.value = this.value.toUpperCase(); });
+  on('hremp-search', 'keydown', function(e) { if (e.key === 'Enter') hrSearchEmployee(); });
+  on('hremp-f-empid', 'input', function() { this.value = this.value.toUpperCase(); });
+  on('hremp-f-startdate', 'input', function() { maskDate(this); });
+  on('hremp-f-startdate', 'keydown', function(e) { allowDateKeys(e); });
+  on('hremp-save', 'click', hrSaveEmployee);
+  on('hremp-add-new', 'click', hrAddNewEmployee);
+  on('hremp-reset-device', 'click', function() {
+    hrEmpAction('resetDevice', 'รีเซ็ต Device ของพนักงานคนนี้? (พนักงานจะผูกอุปกรณ์ใหม่ได้)');
+  });
+  on('hremp-reset-pw', 'click', function() {
+    hrEmpAction('resetPassword', 'รีเซ็ตรหัสผ่าน? พนักงานต้องลงทะเบียนใหม่ทั้งหมด (รหัสผ่าน + อุปกรณ์)');
+  });
+  on('hremp-toggle-status', 'click', hrToggleStatus);
+  // B4 Manual Entry
+  on('hrman-date', 'input', function() { maskDate(this); });
+  on('hrman-date', 'keydown', function(e) { allowDateKeys(e); });
+  on('hrman-time', 'input', function() { maskTime(this); });
+  on('hrman-submit', 'click', hrSubmitManual);
+
+  // LOGIN
+  on('btn-login', 'click', doLogin);
+  on('btn-logout', 'click', function() {
+    if (confirm('ออกจากระบบ?')) logout();
+  });
+  on('login-id',  'input',   function() { this.value = this.value.toUpperCase(); });
+  on('login-id',  'keydown', function(e) { if (e.key==='Enter') { var pw=document.getElementById('login-pw'); if(pw) pw.focus(); } });
+  on('login-pw',  'keydown', function(e) { if (e.key==='Enter') doLogin(); });
+
+  // FORGOT PASSWORD link & page
+  var fl = document.querySelector('#page-welcome [style*="color:var(--ac)"]');
+  if (fl) fl.addEventListener('click', function() { go('forgot'); });
+  on('btn-fp', 'click', doForgot);
+  on('fp-id',   'input', function() { this.value = this.value.toUpperCase(); });
+  on('fp-date', 'input',   function() { maskDate(this); });
+  on('fp-date', 'keydown', function(e) { allowDateKeys(e); });
+
+  // NEW ENROLL button on welcome
+  var we = document.querySelector('#page-welcome .btn.o');
+  if (we) we.addEventListener('click', function() { go('enrollment'); });
+
+  // BACK buttons — เฉพาะปุ่ม "← กลับ" ที่ไม่มี id (ปุ่มที่มี id ผูก handler แยกแล้ว)
+  document.querySelectorAll('.page').forEach(function(page) {
+    var back = page.querySelector('button');
+    if (back && !back.id && back.textContent.indexOf('กลับ') !== -1) {
+      back.addEventListener('click', function() {
+        if (page.id === 'page-forgot') { S.forgotStep = 1; var c = document.getElementById('fp-pw-card'); if(c) c.style.display='none'; }
+        go('welcome');
+      });
+    }
+  });
+
+  // ENROLLMENT
+  on('e-empid',     'input',   function() { this.value = this.value.toUpperCase(); });
+  on('e-startdate', 'input',   function() { maskDate(this); });
+  on('e-startdate', 'keydown', function(e) { allowDateKeys(e); });
+  on('btn-verify',      'click', doVerifyIdentity);
+  on('btn-open-cam-e',  'click', openEnrollCam);
+  on('btn-snap',  'click', snapEnroll);
+
+  // กล้องเช็คอิน
+  on('ci-open-cam', 'click', function() { openCam('ci'); });
+  on('ci-snap',     'click', function() { snapCam('ci'); });
+  on('ci-retake',   'click', function() { retakeCam('ci'); });
+  // กล้องเช็คเอาต์
+  on('co-open-cam', 'click', function() { openCam('co'); });
+  on('co-snap',     'click', function() { snapCam('co'); });
+  on('co-retake',   'click', function() { retakeCam('co'); });
+  on('btn-reg',   'click', doActivate);
+  // retake button (inside selfie-done div)
+  var rtk = document.querySelector('#selfie-done .btn.o');
+  if (rtk) rtk.addEventListener('click', retake);
+  // done → go welcome
+  var dn = document.querySelector('#es3 .btn.p');
+  if (dn) dn.addEventListener('click', function() { go('welcome'); });
+
+  // CHECK-IN / CHECK-OUT
+  on('btn-ci', 'click', doCheckin);
+  on('btn-co', 'click', doCheckout);
+
+  // HISTORY
+  on('btn-hist-reload', 'click', function() { loadHistory(); });
+
+  // ปุ่มเลือกช่วงเวลา 1/2/3 เดือน
+  document.querySelectorAll('.range-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      loadHistory(parseInt(b.dataset.months, 10));
+    });
+  });
+
+  // OVERLAY close
+  var ocl = document.querySelector('.res-card .btn.o');
+  if (ocl) ocl.addEventListener('click', closeOv);
+})();
+</script>
+</body>
+</html>
