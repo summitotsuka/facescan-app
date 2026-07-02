@@ -1046,6 +1046,19 @@ const S = {
   ciSelfie: null, coSelfie: null, ciCam: null, coCam: null
 };
 
+// ── KIOSK state (ประกาศต้นไฟล์ กัน temporal dead zone ตอน go() เรียก stopKiosk ระหว่าง restoreSession) ──
+const KIOSK_THRESHOLD = 0.55;       // ระยะ euclidean ที่ถือว่า "ใช่คนนั้น" (ต่ำ=เข้มงวด)
+const KIOSK_SCAN_INTERVAL = 1500;   // สแกนทุกกี่ ms
+const KIOSK_RESULT_HOLD = 3000;     // แสดงผลค้างกี่ ms
+let kioskFaces = [];
+let kioskLabeled = null;
+let kioskMatcher = null;
+let kioskCam = null;
+let kioskScanTimer = null;
+let kioskClockTimer = null;
+let kioskBusy = false;
+let kioskRecentLocal = {};
+
 // CONSTANTS
 const RADIUS = 100;
 const GPS_ACCURACY_MAX = 150;
@@ -1231,8 +1244,9 @@ function showEmpStrip(name, empId, shiftLabel) {
 
 function go(id) {
   // ปิดกล้องเมื่อออกจากหน้าที่ใช้กล้อง (เผื่อ navigate โดยไม่กดปุ่มออก)
-  if (id !== 'kiosk' && typeof stopKiosk === 'function') stopKiosk();
-  if (id !== 'hr-face' && typeof stopFaceCam === 'function') stopFaceCam();
+  // หุ้ม try-catch กันกรณีเรียกตอนเริ่มแอป (ตัวแปร kiosk ยังไม่ init — temporal dead zone)
+  try { if (id !== 'kiosk') stopKiosk(); } catch(e) {}
+  try { if (id !== 'hr-face') stopFaceCam(); } catch(e) {}
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById('page-' + id);
@@ -2011,17 +2025,7 @@ async function captureFace() {
 }
 
 // ========== KIOSK โหมดสแกนหน้า ==========
-const KIOSK_THRESHOLD = 0.55;       // ระยะ euclidean ที่ถือว่า "ใช่คนนั้น" (ต่ำ=เข้มงวด)
-const KIOSK_SCAN_INTERVAL = 1500;   // สแกนทุกกี่ ms
-const KIOSK_RESULT_HOLD = 3000;     // แสดงผลค้างกี่ ms
-let kioskFaces = [];                // [{empId, name, shift, descriptor}]
-let kioskLabeled = null;            // faceapi.LabeledFaceDescriptors matcher
-let kioskMatcher = null;
-let kioskCam = null;
-let kioskScanTimer = null;
-let kioskClockTimer = null;
-let kioskBusy = false;              // กันบันทึกซ้อนระหว่างรอ server
-let kioskRecentLocal = {};          // empId -> timestamp (กันเรียก server รัวในเครื่อง)
+// (ตัวแปร state ประกาศไว้ต้นไฟล์แล้ว เพื่อกัน temporal dead zone ตอน go() ถูกเรียกตอนเริ่มแอป)
 
 function loadKioskPage() {
   const loadEl = document.getElementById('kiosk-loading');
