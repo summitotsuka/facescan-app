@@ -22,9 +22,9 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fn)}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(10,12,16,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
 .logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
-.logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-size:13px}
+.logo-icon{height:28px;min-width:28px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-size:13px;overflow:hidden}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-tabs{display:flex;gap:3px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:3px}
 .nav-tab{padding:4px 12px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--tx2);transition:all .15s;font-family:var(--fn)}
@@ -212,7 +212,7 @@ select.inp option{background:var(--sf2)}
 <body>
 
 <nav>
-  <div class="logo"><div class="logo-icon">W</div>WorkScan</div>
+  <div class="logo"><div class="logo-icon" data-logo>W</div>WorkScan</div>
   <div class="nav-right">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
@@ -918,6 +918,38 @@ select.inp option{background:var(--sf2)}
   </div>
 </div>
 
+<!-- ═══════════════ KIOSK โหมดสแกนหน้า (เต็มจอ) ═══════════════ -->
+<div class="page" id="page-kiosk" style="max-width:none;padding:12px;display:flex">
+  <div id="kiosk-screen" style="flex:1;background:#0a0e14;display:flex;flex-direction:column;border-radius:12px">
+    <!-- แถบบน -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+      <div class="logo" style="color:#e8edf5"><div class="logo-icon" data-logo>W</div><span id="kiosk-title">WorkScan Kiosk</span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="kiosk-clock" style="color:#e8edf5;font-size:15px;font-family:var(--mo)">--:--</div>
+        <button id="kiosk-exit" style="background:rgba(255,255,255,.1);border:none;color:#e8edf5;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--fn)">ออก</button>
+      </div>
+    </div>
+
+    <!-- สถานะโหลด -->
+    <div id="kiosk-loading" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a1b3">
+      <div class="spin" style="width:28px;height:28px;border-width:3px;margin-bottom:14px"></div>
+      <div style="font-size:14px" id="kiosk-loadmsg">กำลังเตรียมระบบสแกนใบหน้า...</div>
+    </div>
+
+    <!-- กล้อง + overlay -->
+    <div id="kiosk-camarea" style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:0 16px">
+      <div style="position:relative;width:100%;max-width:640px">
+        <video id="kiosk-video" autoplay muted playsinline style="width:100%;border-radius:12px;display:block;background:#000"></video>
+        <canvas id="kiosk-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
+      </div>
+      <div id="kiosk-hint" style="color:#94a1b3;font-size:13px;margin-top:12px;text-align:center">มองมาที่กล้องเพื่อบันทึกเวลา</div>
+    </div>
+
+    <!-- แถบแจ้งผลด้านล่าง -->
+    <div id="kiosk-result" style="display:none;padding:16px;margin:0 16px 20px;border-radius:12px;text-align:center"></div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="res-card">
     <div class="r-icon" id="ri">✅</div>
@@ -944,6 +976,30 @@ select.inp option{background:var(--sf2)}
 
 // ── GAS Web App URL — endpoint หลักของระบบ ──────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P_EWCNuPUQepKClFj6L1nSfccYhLD6CUsYJwMcuxjS7Ab/exec';
+
+// ── โลโก้บริษัท ──────────────────────────────────────────────
+// ใส่ Google Drive File ID ของรูปโลโก้ (จากลิงก์ share: .../file/d/<FILE_ID>/view)
+// หรือใส่เป็น URL รูปเต็มก็ได้ ถ้าเว้นว่าง = ใช้โลโก้ตัวอักษร W เดิม
+// วิธีหา File ID: คลิกขวารูปใน Drive → Share → Copy link → เอาส่วนระหว่าง /d/ กับ /view
+// *** ต้องตั้งค่าแชร์รูปเป็น "Anyone with the link" ด้วย ***
+const LOGO_FILE_ID = '1otlAoKgDJq2D06ECwGsigBn8_bOfdRtM';   // ← ใส่ File ID ตรงนี้ เช่น '1AbC2dEfGhI...'
+
+// แปลง File ID เป็น direct image URL (ถ้าใส่ URL เต็มมาก็ใช้ตรงๆ)
+function getLogoUrl() {
+  if (!LOGO_FILE_ID) return '';
+  if (/^https?:\/\//.test(LOGO_FILE_ID)) return LOGO_FILE_ID;   // เป็น URL เต็มอยู่แล้ว
+  return `https://drive.google.com/thumbnail?id=${LOGO_FILE_ID}&sz=w400`;
+}
+
+// ใส่โลโก้ลงจุดที่มี data-logo (nav + kiosk)
+function applyLogo() {
+  const url = getLogoUrl();
+  if (!url) return;   // ไม่มีโลโก้ = คงตัวอักษรเดิม
+  document.querySelectorAll('[data-logo]').forEach(el => {
+    el.innerHTML = `<img src="${url}" alt="logo" style="height:100%;width:auto;object-fit:contain;display:block">`;
+    el.style.background = 'none';
+  });
+}
 
 /** เรียก GAS function ผ่าน HTTP POST — คืนค่าเป็น Promise */
 function callAPI(action, payload) {
@@ -1174,6 +1230,10 @@ function showEmpStrip(name, empId, shiftLabel) {
 }
 
 function go(id) {
+  // ปิดกล้องเมื่อออกจากหน้าที่ใช้กล้อง (เผื่อ navigate โดยไม่กดปุ่มออก)
+  if (id !== 'kiosk' && typeof stopKiosk === 'function') stopKiosk();
+  if (id !== 'hr-face' && typeof stopFaceCam === 'function') stopFaceCam();
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById('page-' + id);
   if (!target) return;
@@ -1214,6 +1274,9 @@ function go(id) {
   }
   if (id === 'hr-face') {
     loadFacePage();
+  }
+  if (id === 'kiosk') {
+    loadKioskPage();
   }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
@@ -1930,6 +1993,178 @@ async function captureFace() {
   }
 }
 
+// ========== KIOSK โหมดสแกนหน้า ==========
+const KIOSK_THRESHOLD = 0.55;       // ระยะ euclidean ที่ถือว่า "ใช่คนนั้น" (ต่ำ=เข้มงวด)
+const KIOSK_SCAN_INTERVAL = 1500;   // สแกนทุกกี่ ms
+const KIOSK_RESULT_HOLD = 3000;     // แสดงผลค้างกี่ ms
+let kioskFaces = [];                // [{empId, name, shift, descriptor}]
+let kioskLabeled = null;            // faceapi.LabeledFaceDescriptors matcher
+let kioskMatcher = null;
+let kioskCam = null;
+let kioskScanTimer = null;
+let kioskClockTimer = null;
+let kioskBusy = false;              // กันบันทึกซ้อนระหว่างรอ server
+let kioskRecentLocal = {};          // empId -> timestamp (กันเรียก server รัวในเครื่อง)
+
+function loadKioskPage() {
+  document.getElementById('kiosk-loading').style.display = 'flex';
+  document.getElementById('kiosk-camarea').style.display = 'none';
+  document.getElementById('kiosk-result').style.display = 'none';
+  document.getElementById('kiosk-loadmsg').textContent = 'กำลังเตรียมระบบสแกนใบหน้า...';
+
+  startKioskClock();
+
+  // 1) โหลด face-api → 2) โหลด descriptor ทุกคน → 3) เปิดกล้อง → 4) เริ่มสแกน
+  loadFaceApi()
+    .then(() => {
+      document.getElementById('kiosk-loadmsg').textContent = 'กำลังโหลดข้อมูลใบหน้าพนักงาน...';
+      return new Promise((resolve, reject) => {
+        gasRun('kioskGetFaces', { hrToken: S.hrToken })
+          .withSuccessHandler(r => {
+            if (!r || !r.success) { reject(new Error((r && r.message) || 'โหลดข้อมูลใบหน้าไม่สำเร็จ')); return; }
+            resolve(r.faces || []);
+          })
+          .withFailureHandler(e => reject(e));
+      });
+    })
+    .then(faces => {
+      kioskFaces = faces;
+      if (faces.length === 0) throw new Error('ยังไม่มีพนักงานลงทะเบียนใบหน้า');
+      // สร้าง matcher
+      const labeled = faces.map(f =>
+        new faceapi.LabeledFaceDescriptors(f.empId, [new Float32Array(f.descriptor)])
+      );
+      kioskMatcher = new faceapi.FaceMatcher(labeled, KIOSK_THRESHOLD);
+      return startKioskCamera();
+    })
+    .then(() => {
+      document.getElementById('kiosk-loading').style.display = 'none';
+      document.getElementById('kiosk-camarea').style.display = 'flex';
+      kioskScanLoop();
+    })
+    .catch(e => {
+      document.getElementById('kiosk-loadmsg').textContent = '✗ ' + e.message;
+      showToast(e.message);
+    });
+}
+
+function startKioskClock() {
+  const tick = () => {
+    const now = new Date();
+    const el = document.getElementById('kiosk-clock');
+    if (el) el.textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+  tick();
+  kioskClockTimer = setInterval(tick, 1000);
+}
+
+function startKioskCamera() {
+  return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: {ideal:640}, height: {ideal:480} } })
+    .then(stream => {
+      kioskCam = stream;
+      const v = document.getElementById('kiosk-video');
+      v.srcObject = stream;
+      return new Promise(res => { v.onloadedmetadata = () => { v.play(); res(); }; });
+    });
+}
+
+async function kioskScanLoop() {
+  if (!kioskCam) return;   // หยุดแล้ว
+  try {
+    await kioskDetect();
+  } catch(e) { /* ข้าม error รอบเดียว */ }
+  kioskScanTimer = setTimeout(kioskScanLoop, KIOSK_SCAN_INTERVAL);
+}
+
+async function kioskDetect() {
+  const v = document.getElementById('kiosk-video');
+  const canvas = document.getElementById('kiosk-canvas');
+  if (!v || !v.videoWidth) return;
+
+  // ปรับขนาด canvas ให้ตรงกับวิดีโอ
+  canvas.width = v.videoWidth;
+  canvas.height = v.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // จับทุกหน้าในเฟรม
+  const results = await faceapi
+    .detectAllFaces(v)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+
+  if (!results.length) return;
+
+  results.forEach(res => {
+    const box = res.detection.box;
+    const best = kioskMatcher.findBestMatch(res.descriptor);
+    const isMatch = best.label !== 'unknown';
+    const emp = isMatch ? kioskFaces.find(f => f.empId === best.label) : null;
+
+    // วาดกรอบ
+    const color = isMatch ? '#22c55e' : '#94a1b3';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+    // ป้ายชื่อ/รหัส
+    const label = emp ? `${emp.empId} ${emp.name}` : 'ไม่รู้จัก';
+    ctx.font = '600 18px sans-serif';
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = color;
+    ctx.fillRect(box.x - 1, box.y - 26, tw + 16, 26);
+    ctx.fillStyle = isMatch ? '#04120a' : '#0a0e14';
+    ctx.fillText(label, box.x + 7, box.y - 7);
+
+    // ถ้า match + ไม่ busy + ไม่เพิ่งสแกนในเครื่อง → บันทึก
+    if (isMatch && emp && !kioskBusy) {
+      const lastLocal = kioskRecentLocal[emp.empId] || 0;
+      if (Date.now() - lastLocal > 10000) {   // กันเรียกรัวในเครื่อง 10 วิ (server มี cooldown จริง 1 ชม.)
+        kioskRecentLocal[emp.empId] = Date.now();
+        kioskRecord(emp);
+      }
+    }
+  });
+}
+
+function kioskRecord(emp) {
+  kioskBusy = true;
+  gasRun('kioskCheckInOut', { hrToken: S.hrToken, employeeId: emp.empId })
+    .withSuccessHandler(r => {
+      kioskBusy = false;
+      if (!r) return;
+      if (r.authError) { setTimeout(() => logout(), 1500); return; }
+      showKioskResult(r);
+    })
+    .withFailureHandler(e => { kioskBusy = false; /* เงียบไว้ ไม่รบกวนจอ */ });
+}
+
+function showKioskResult(r) {
+  const el = document.getElementById('kiosk-result');
+  let bg, color, icon;
+  if (r.cooldown) {
+    bg = 'rgba(148,161,179,.15)'; color = '#cbd5e1'; icon = '⏳';
+  } else if (r.type === 'IN') {
+    bg = 'rgba(34,197,94,.18)'; color = '#4ade80'; icon = '✓';
+  } else {
+    bg = 'rgba(56,138,221,.18)'; color = '#60a5fa'; icon = '✓';
+  }
+  el.style.background = bg;
+  el.style.color = color;
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-size:22px;margin-bottom:2px">${icon}</div><div style="font-size:16px;font-weight:600">${r.message}</div>`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, KIOSK_RESULT_HOLD);
+}
+
+function stopKiosk() {
+  if (kioskCam) { kioskCam.getTracks().forEach(t => t.stop()); kioskCam = null; }
+  if (kioskScanTimer) { clearTimeout(kioskScanTimer); kioskScanTimer = null; }
+  if (kioskClockTimer) { clearInterval(kioskClockTimer); kioskClockTimer = null; }
+  kioskBusy = false;
+  kioskRecentLocal = {};
+}
+
 // ========== HR — จัดการพนักงาน ==========
 let hremp_mode = null;   // 'edit' | 'add'
 
@@ -2629,6 +2864,7 @@ function showToast(msg, ok) {
 }
 
 setEB(1);
+applyLogo();
 
 // ============================================================
 //  EVENT BINDINGS — ผูกทุก handler ผ่าน addEventListener
@@ -2672,7 +2908,10 @@ setEB(1);
   on('hr-menu-export',    'click', function() { go('hr-export'); });
   on('hr-menu-holiday',   'click', function() { go('hr-holiday'); });
   on('hr-menu-face',      'click', function() { go('hr-face'); });
-  on('hr-menu-kiosk',     'click', function() { showToast('โหมด Kiosk — จะเพิ่มในเฟส 2'); });
+  on('hr-menu-kiosk',     'click', function() { go('kiosk'); });
+
+  // Kiosk
+  on('kiosk-exit', 'click', function() { stopKiosk(); go('hr-dash'); });
 
   // HR ลงทะเบียนใบหน้า
   on('hrface-back', 'click', function() { stopFaceCam(); go('hr-dash'); });
