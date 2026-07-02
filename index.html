@@ -982,7 +982,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P
 // หรือใส่เป็น URL รูปเต็มก็ได้ ถ้าเว้นว่าง = ใช้โลโก้ตัวอักษร W เดิม
 // วิธีหา File ID: คลิกขวารูปใน Drive → Share → Copy link → เอาส่วนระหว่าง /d/ กับ /view
 // *** ต้องตั้งค่าแชร์รูปเป็น "Anyone with the link" ด้วย ***
-const LOGO_FILE_ID = '1_TkOSc2e7PMC2pIWPGP0mn0V4Q4Igpn9';   // ← ใส่ File ID ตรงนี้ เช่น '1AbC2dEfGhI...'
+const LOGO_FILE_ID = '';   // ← ใส่ File ID ตรงนี้ เช่น '1AbC2dEfGhI...'
 
 // แปลง File ID เป็น direct image URL (ถ้าใส่ URL เต็มมาก็ใช้ตรงๆ)
 function getLogoUrl() {
@@ -1815,7 +1815,8 @@ const FACEAPI_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
 let faceApiReady = false;
 let faceApiLoading = false;
 
-function loadFaceApi() {
+function loadFaceApi(onProgress) {
+  const prog = (msg) => { if (typeof onProgress === 'function') onProgress(msg); };
   return new Promise((resolve, reject) => {
     if (faceApiReady) { resolve(); return; }
     if (faceApiLoading) {
@@ -1824,13 +1825,13 @@ function loadFaceApi() {
     }
     faceApiLoading = true;
 
-    // timeout กันค้างตลอดกาล (60 วินาที)
+    // timeout กันค้างตลอดกาล (45 วินาที)
     let done = false;
     const failTimer = setTimeout(() => {
       if (done) return;
       done = true; faceApiLoading = false;
-      reject(new Error('โหลดนานเกินไป (timeout) — ตรวจอินเทอร์เน็ตหรือลองใหม่'));
-    }, 60000);
+      reject(new Error('โหลดนานเกินไป (timeout 45 วิ) — ตรวจอินเทอร์เน็ตหรือลองใหม่'));
+    }, 45000);
 
     const finish = (err) => {
       if (done) return;
@@ -1839,14 +1840,17 @@ function loadFaceApi() {
       else { faceApiReady = true; faceApiLoading = false; resolve(); }
     };
 
+    prog('กำลังโหลดไลบรารี face-api...');
     const script = document.createElement('script');
     script.src = FACEAPI_CDN;
     script.onload = async () => {
       try {
         if (typeof faceapi === 'undefined') { finish(new Error('โหลด library ได้แต่ faceapi ไม่พร้อม')); return; }
-        // โหลด model: detector + landmark + recognition
+        prog('กำลังโหลดโมเดลตรวจจับ (1/3)...');
         await faceapi.nets.ssdMobilenetv1.loadFromUri(FACEAPI_MODELS);
+        prog('กำลังโหลดโมเดลจุดสังเกต (2/3)...');
         await faceapi.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODELS);
+        prog('กำลังโหลดโมเดลจดจำใบหน้า (3/3)...');
         await faceapi.nets.faceRecognitionNet.loadFromUri(FACEAPI_MODELS);
         finish(null);
       } catch (e) {
@@ -2031,7 +2035,10 @@ function loadKioskPage() {
   startKioskClock();
 
   // 1) โหลด face-api → 2) โหลด descriptor ทุกคน → 3) เปิดกล้อง → 4) เริ่มสแกน
-  loadFaceApi()
+  loadFaceApi((msg) => {
+      const el = document.getElementById('kiosk-loadmsg');
+      if (el) el.textContent = msg;
+    })
     .then(() => {
       document.getElementById('kiosk-loadmsg').textContent = 'กำลังโหลดข้อมูลใบหน้าพนักงาน...';
       return new Promise((resolve, reject) => {
