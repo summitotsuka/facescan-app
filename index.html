@@ -982,7 +982,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P
 // หรือใส่เป็น URL รูปเต็มก็ได้ ถ้าเว้นว่าง = ใช้โลโก้ตัวอักษร W เดิม
 // วิธีหา File ID: คลิกขวารูปใน Drive → Share → Copy link → เอาส่วนระหว่าง /d/ กับ /view
 // *** ต้องตั้งค่าแชร์รูปเป็น "Anyone with the link" ด้วย ***
-const LOGO_FILE_ID = '';   // ← ใส่ File ID ตรงนี้ เช่น '1AbC2dEfGhI...'
+const LOGO_FILE_ID = '1_TkOSc2e7PMC2pIWPGP0mn0V4Q4Igpn9';   // ← ใส่ File ID ตรงนี้ เช่น '1AbC2dEfGhI...'
 
 // แปลง File ID เป็น direct image URL (ถ้าใส่ URL เต็มมาก็ใช้ตรงๆ)
 function getLogoUrl() {
@@ -1075,8 +1075,9 @@ const OFFICE = { lat: 13.449238475430999, lng: 101.03901280652984 };
     return v;
   })();
   startGPS();
-  // ลองกู้ session เดิม (ถ้ายังไม่หมดอายุ) — จะ login อัตโนมัติ
-  restoreSession();
+  // [ทดสอบ] ปิดการกู้ session อัตโนมัติชั่วคราว — เริ่มที่หน้า welcome เสมอ
+  // restoreSession();
+  go('welcome');
 })();
 
 // ── SESSION (จำ login ไว้ 12 ชม. ครอบ 1 กะงาน) ──────────────
