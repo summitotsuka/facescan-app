@@ -214,7 +214,7 @@ select.inp option{background:var(--sf2)}
 <body>
 
 <nav>
-  <div class="logo"><div class="logo-icon" data-logo>W</div>WorkScan</div>
+  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">Summit Otsuka Manufacturing Co., Ltd.</span></div>
   <div class="nav-right">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
@@ -240,7 +240,7 @@ select.inp option{background:var(--sf2)}
 
 <div class="page active" id="page-welcome">
   <div style="text-align:center;padding:28px 0 20px">
-    <div style="width:60px;height:60px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px">W</div>
+    <div data-logo-hero style="width:60px;height:60px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px">W</div>
     <div style="font-size:24px;font-weight:600">WorkScan</div>
     <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบลงเวลาเข้า-ออกงาน</div>
   </div>
@@ -925,12 +925,16 @@ select.inp option{background:var(--sf2)}
   <div id="kiosk-screen" style="flex:1;background:#0a0e14;display:flex;flex-direction:column;border-radius:12px">
     <!-- แถบบน -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-      <div class="logo" style="color:#e8edf5"><div class="logo-icon" data-logo>W</div><span id="kiosk-title">WorkScan Kiosk</span></div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="kiosk-clock" style="color:#e8edf5;font-size:15px;font-family:var(--mo)">--:--</div>
+      <div class="logo" style="color:#e8edf5"><span id="kiosk-title" style="font-size:14px;font-weight:600">Summit Otsuka Manufacturing</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="kiosk-fullscreen" style="background:rgba(255,255,255,.1);border:none;color:#e8edf5;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--fn)">⛶ เต็มจอ</button>
         <button id="kiosk-exit" style="background:rgba(255,255,255,.1);border:none;color:#e8edf5;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--fn)">ออก</button>
       </div>
     </div>
+
+    <!-- นาฬิกาใหญ่กลางจอ -->
+    <div id="kiosk-bigclock" style="text-align:center;color:#e8edf5;font-family:var(--mo);font-size:44px;font-weight:500;letter-spacing:2px;padding:4px 0">--:--:--</div>
+    <div id="kiosk-bigdate" style="text-align:center;color:#94a1b3;font-size:13px;margin-bottom:8px">--</div>
 
     <!-- สถานะโหลด -->
     <div id="kiosk-loading" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a1b3">
@@ -997,9 +1001,33 @@ function getLogoUrl() {
 function applyLogo() {
   const url = getLogoUrl();
   if (!url) return;   // ไม่มีโลโก้ = คงตัวอักษรเดิม
-  document.querySelectorAll('[data-logo]').forEach(el => {
-    el.innerHTML = `<img src="${url}" alt="logo" style="height:100%;width:auto;object-fit:contain;display:block">`;
+
+  // โลโก้ใหญ่กลางหน้า login (แทนกล่อง W)
+  document.querySelectorAll('[data-logo-hero]').forEach(el => {
+    el.innerHTML = `<img src="${url}" alt="logo" style="max-width:180px;max-height:80px;width:auto;height:auto;object-fit:contain;display:block">`;
     el.style.background = 'none';
+    el.style.width = 'auto';
+    el.style.height = 'auto';
+    el.style.borderRadius = '0';
+  });
+
+  // โลโก้เล็กที่ nav/kiosk (data-logo)
+  document.querySelectorAll('[data-logo]').forEach(el => {
+    const isKiosk = el.closest('#page-kiosk');
+    const h = isKiosk ? 40 : 34;
+    el.innerHTML = `<img src="${url}" alt="logo" style="height:${h}px;width:auto;object-fit:contain;display:block">`;
+    el.style.background = 'none';
+    el.style.borderRadius = '0';
+    el.style.height = h + 'px';
+    el.style.minWidth = '0';
+    el.style.overflow = 'visible';
+    const parent = el.parentElement;
+    if (parent) {
+      parent.childNodes.forEach(node => {
+        if (node.nodeType === 3 && node.textContent.trim()) node.textContent = '';
+        if (node.nodeType === 1 && node !== el && node.id === 'kiosk-title') node.style.display = 'none';
+      });
+    }
   });
 }
 
@@ -1077,7 +1105,8 @@ const OFFICE = { lat: 13.449238475430999, lng: 101.03901280652984 };
     return v;
   })();
   startGPS();
-  // [ทดสอบ] ปิดการกู้ session อัตโนมัติชั่วคราว — เริ่มที่หน้า welcome เสมอ
+  // [ชั่วคราว] ปิด auto-login ไว้ก่อน จนกว่าจะทดสอบ kiosk + เมนูอื่นครบ แล้วค่อยเปิด
+  // (ป้องกันไม่ให้ตัวแปรใหม่มารบกวนช่วงที่ระบบเพิ่งนิ่ง)
   // restoreSession();
   go('welcome');
 })();
@@ -2088,11 +2117,24 @@ function startKioskClock() {
   if (kioskClockTimer) clearInterval(kioskClockTimer);
   const tick = () => {
     const now = new Date();
-    const el = document.getElementById('kiosk-clock');
-    if (el) el.textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const big = document.getElementById('kiosk-bigclock');
+    if (big) big.textContent = timeStr;
+    const dateEl = document.getElementById('kiosk-bigdate');
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   };
   tick();
   kioskClockTimer = setInterval(tick, 1000);
+}
+
+// สลับโหมดเต็มจอ (Fullscreen API) — ESC ออกเอง
+function toggleKioskFullscreen() {
+  const el = document.getElementById('page-kiosk');
+  if (!document.fullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen || function(){}).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || function(){}).call(document);
+  }
 }
 
 function startKioskCamera() {
@@ -2948,7 +2990,11 @@ applyLogo();
   on('hr-menu-kiosk',     'click', function() { go('kiosk'); });
 
   // Kiosk
-  on('kiosk-exit', 'click', function() { stopKiosk(); go('hr-dash'); });
+  on('kiosk-exit', 'click', function() {
+    if (document.fullscreenElement) { (document.exitFullscreen || function(){}).call(document); }
+    stopKiosk(); go('hr-dash');
+  });
+  on('kiosk-fullscreen', 'click', toggleKioskFullscreen);
 
   // HR ลงทะเบียนใบหน้า
   on('hrface-back', 'click', function() { stopFaceCam(); go('hr-dash'); });
