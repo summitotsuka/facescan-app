@@ -2198,7 +2198,7 @@ async function kioskDetect() {
     // ถ้า match + ไม่ busy + ไม่เพิ่งสแกนในเครื่อง → บันทึก
     if (isMatch && emp && !kioskBusy) {
       const lastLocal = kioskRecentLocal[emp.empId] || 0;
-      if (Date.now() - lastLocal > 10000) {   // กันเรียกรัวในเครื่อง 10 วิ (server มี cooldown จริง 1 ชม.)
+      if (Date.now() - lastLocal > 30000) {   // กันเรียกรัวในเครื่อง 10 วิ (server มี cooldown จริง 1 ชม.)
         kioskRecentLocal[emp.empId] = Date.now();
         kioskRecord(emp);
       }
