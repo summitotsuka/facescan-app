@@ -1077,7 +1077,7 @@ const S = {
 };
 
 // ── KIOSK state (ประกาศต้นไฟล์ กัน temporal dead zone ตอน go() เรียก stopKiosk ระหว่าง restoreSession) ──
-const KIOSK_THRESHOLD = 0.55;       // ระยะ euclidean ที่ถือว่า "ใช่คนนั้น" (ต่ำ=เข้มงวด)
+const KIOSK_THRESHOLD = 0.50;       // ระยะ euclidean ที่ถือว่า "ใช่คนนั้น" — ปรับได้ในช่วง 0.45–0.55 (ต่ำ=เข้มงวด กันผิดคน / สูง=จำง่าย แต่เสี่ยงผิด). ต่ำกว่า 0.45 ตึงเกิน คนจริงถูกปฏิเสธ
 const KIOSK_SCAN_INTERVAL = 1500;   // สแกนทุกกี่ ms
 const KIOSK_RESULT_HOLD = 3000;     // แสดงผลค้างกี่ ms
 let kioskFaces = [];
