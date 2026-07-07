@@ -944,8 +944,8 @@ select.inp option{background:var(--sf2)}
 
     <!-- กล้อง + overlay -->
     <div id="kiosk-camarea" style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;min-height:0">
-      <div id="kiosk-vidwrap" style="position:relative;height:100%;aspect-ratio:4/3;max-width:100%;max-height:100%;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden;background:#000">
-        <video id="kiosk-video" autoplay muted playsinline style="width:100%;height:100%;object-fit:contain;display:block"></video>
+      <div id="kiosk-vidwrap" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden;background:#000">
+        <video id="kiosk-video" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
         <canvas id="kiosk-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
       </div>
       <div id="kiosk-hint" style="color:#94a1b3;font-size:13px;margin-top:10px;text-align:center;flex-shrink:0">มองมาที่กล้องเพื่อบันทึกเวลา</div>
@@ -2158,13 +2158,26 @@ async function kioskScanLoop() {
 async function kioskDetect() {
   const v = document.getElementById('kiosk-video');
   const canvas = document.getElementById('kiosk-canvas');
+  const wrap = document.getElementById('kiosk-vidwrap');
   if (!v || !v.videoWidth) return;
 
-  // ปรับขนาด canvas ให้ตรงกับวิดีโอ
-  canvas.width = v.videoWidth;
-  canvas.height = v.videoHeight;
+  // ตั้ง canvas ให้เท่าขนาดกรอบที่แสดงจริง (ไม่ใช่ขนาดวิดีโอ) — กรอบจะได้ตรงตำแหน่ง
+  const dispW = wrap.clientWidth, dispH = wrap.clientHeight;
+  canvas.width = dispW;
+  canvas.height = dispH;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, dispW, dispH);
+
+  // คำนวณ scale + offset ของ object-fit:cover
+  // cover = ขยายภาพให้เต็มกรอบตามด้านที่ต้องขยายมากกว่า แล้ว crop ส่วนเกินอีกด้าน
+  const vW = v.videoWidth, vH = v.videoHeight;
+  const scale = Math.max(dispW / vW, dispH / vH);
+  const drawW = vW * scale, drawH = vH * scale;
+  const offX = (dispW - drawW) / 2;   // ติดลบ = ถูก crop ซ้าย-ขวา
+  const offY = (dispH - drawH) / 2;   // ติดลบ = ถูก crop บน-ล่าง
+  // map พิกัดจากภาพกล้อง → พิกัดบนจอ
+  const mapX = x => x * scale + offX;
+  const mapY = y => y * scale + offY;
 
   // จับทุกหน้าในเฟรม
   const results = await faceapi
@@ -2180,20 +2193,24 @@ async function kioskDetect() {
     const isMatch = best.label !== 'unknown';
     const emp = isMatch ? kioskFaces.find(f => f.empId === best.label) : null;
 
+    // แปลงพิกัดกล้อง → พิกัดจอ (ตาม cover)
+    const bx = mapX(box.x), by = mapY(box.y);
+    const bw = box.width * scale, bh = box.height * scale;
+
     // วาดกรอบ
     const color = isMatch ? '#22c55e' : '#94a1b3';
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
+    ctx.strokeRect(bx, by, bw, bh);
 
     // ป้ายชื่อ/รหัส
     const label = emp ? `${emp.empId} ${emp.name}` : 'ไม่รู้จัก';
     ctx.font = '600 18px sans-serif';
     const tw = ctx.measureText(label).width;
     ctx.fillStyle = color;
-    ctx.fillRect(box.x - 1, box.y - 26, tw + 16, 26);
+    ctx.fillRect(bx - 1, by - 26, tw + 16, 26);
     ctx.fillStyle = isMatch ? '#04120a' : '#0a0e14';
-    ctx.fillText(label, box.x + 7, box.y - 7);
+    ctx.fillText(label, bx + 7, by - 7);
 
     // ถ้า match + ไม่ busy + ไม่เพิ่งสแกนในเครื่อง → บันทึก
     if (isMatch && emp && !kioskBusy) {
