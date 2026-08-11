@@ -999,21 +999,34 @@ textarea.inp{resize:vertical;min-height:60px}
       </select>
     </div>
 
-    <div id="lv-hourly-wrap" style="display:none;margin-bottom:12px">
-      <label class="lbl">จำนวนชั่วโมง</label>
-      <input type="number" id="lv-hourly" class="inp" min="0.5" step="0.5" placeholder="เช่น 2">
-    </div>
-
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <div style="flex:1">
         <label class="lbl">วันที่เริ่มลา</label>
         <input type="date" id="lv-date-from" class="inp">
       </div>
-      <div style="flex:1">
-        <label class="lbl">ถึงวันที่ (เต็มวัน)</label>
+      <div style="flex:1" id="lv-dateto-wrap">
+        <label class="lbl">ถึงวันที่</label>
         <input type="date" id="lv-date-to" class="inp">
       </div>
     </div>
+
+    <!-- ช่องเวลา (แสดงเฉพาะ HOURLY) -->
+    <div id="lv-hourly-wrap" style="display:none;margin-bottom:12px">
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label class="lbl">เวลาเริ่ม</label>
+          <input type="time" id="lv-time-from" class="inp" value="09:00">
+        </div>
+        <div style="flex:1">
+          <label class="lbl">เวลาสิ้นสุด</label>
+          <input type="time" id="lv-time-to" class="inp" value="11:00">
+        </div>
+      </div>
+    </div>
+
+    <!-- สรุปช่วงเวลาที่จะลา (auto) -->
+    <div id="lv-preview" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;font-size:13px;color:var(--tx2)"></div>
+    <input type="hidden" id="lv-hourly">
 
     <div style="margin-bottom:12px">
       <label class="lbl">เหตุผล <span style="color:var(--er)">*</span></label>

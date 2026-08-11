@@ -75,10 +75,63 @@ function lvFillTypes() {
     LV.types.map(t => `<option value="${lvEsc(t.id)}">${lvEsc(t.name)}${t.maxDays ? ` (สิทธิ์ ${t.maxDays} วัน)` : ''}</option>`).join('');
 }
 
-// เปลี่ยนโหมดการลา → แสดง/ซ่อนช่องกรอกชั่วโมง
+// เปลี่ยนโหมดการลา → แสดง/ซ่อนช่อง + อัปเดตสรุปเวลา
 function lvOnModeChange() {
   const mode = document.getElementById('lv-mode').value;
-  document.getElementById('lv-hourly-wrap').style.display = (mode === 'HOURLY') ? 'block' : 'none';
+  const hourlyWrap = document.getElementById('lv-hourly-wrap');
+  const datetoWrap = document.getElementById('lv-dateto-wrap');
+
+  // HOURLY = แสดงช่องเวลา + ซ่อนช่อง "ถึงวันที่" (ลาชั่วโมง = วันเดียว)
+  hourlyWrap.style.display = (mode === 'HOURLY') ? 'block' : 'none';
+  // ครึ่งวัน/ชั่วโมง = วันเดียว ซ่อน "ถึงวันที่"
+  const singleDay = (mode === 'HALF_AM' || mode === 'HALF_PM' || mode === 'HOURLY');
+  datetoWrap.style.visibility = singleDay ? 'hidden' : 'visible';
+
+  lvUpdatePreview();
+}
+
+// อัปเดตข้อความสรุปช่วงเวลาที่จะลา (ตามโหมด)
+function lvUpdatePreview() {
+  const mode = document.getElementById('lv-mode').value;
+  const prev = document.getElementById('lv-preview');
+  const df = document.getElementById('lv-date-from').value;
+  if (!mode || !df) { prev.style.display = 'none'; return; }
+
+  const fmt = (d) => {
+    const [y,m,dd] = d.split('-');
+    return `${dd}/${m}/${y}`;
+  };
+  const dt = document.getElementById('lv-date-to').value || df;
+  let text = '';
+
+  if (mode === 'FULL') {
+    text = `${fmt(df)} (08:30) – ${fmt(dt)} (18:00) · เต็มวัน`;
+  } else if (mode === 'HALF_AM') {
+    text = `${fmt(df)} (08:30) – ${fmt(df)} (12:00) · ครึ่งวันเช้า 3.5 ชม.`;
+  } else if (mode === 'HALF_PM') {
+    text = `${fmt(df)} (13:00) – ${fmt(df)} (18:00) · ครึ่งวันบ่าย 5 ชม.`;
+  } else if (mode === 'HOURLY') {
+    const tf = document.getElementById('lv-time-from').value;
+    const tt = document.getElementById('lv-time-to').value;
+    if (tf && tt) {
+      const hrs = lvCalcHourlyClient(tf, tt);
+      text = `${fmt(df)} (${tf}) – ${fmt(df)} (${tt}) · ${hrs > 0 ? hrs + ' ชม.' : 'เวลาไม่ถูกต้อง'}`;
+    } else {
+      text = 'กรุณาเลือกเวลาเริ่ม-สิ้นสุด';
+    }
+  }
+  prev.textContent = text;
+  prev.style.display = 'block';
+}
+
+// คำนวณชั่วโมงฝั่ง client (หักพักเที่ยง 12:00-13:00) — โชว์ preview เท่านั้น server คำนวณจริง
+function lvCalcHourlyClient(tf, tt) {
+  const [h1,m1] = tf.split(':').map(Number);
+  const [h2,m2] = tt.split(':').map(Number);
+  let s = h1*60+m1, e = h2*60+m2;
+  if (e <= s) return 0;
+  const overlap = Math.max(0, Math.min(e,780) - Math.max(s,720));
+  return +((e - s - overlap)/60).toFixed(2);
 }
 
 // ส่งคำขอลา
@@ -88,7 +141,8 @@ function submitLeave() {
   const dateFrom  = document.getElementById('lv-date-from').value;
   const dateTo    = document.getElementById('lv-date-to').value || dateFrom;
   const mode      = document.getElementById('lv-mode').value;
-  const hourlyValue = document.getElementById('lv-hourly').value;
+  const timeFrom  = document.getElementById('lv-time-from') ? document.getElementById('lv-time-from').value : '';
+  const timeTo    = document.getElementById('lv-time-to') ? document.getElementById('lv-time-to').value : '';
   const reason    = document.getElementById('lv-reason').value.trim();
   const fileUrl   = document.getElementById('lv-file').value.trim();
 
@@ -97,8 +151,8 @@ function submitLeave() {
   if (!dateFrom)  { showToast('กรุณาเลือกวันที่ลา'); return; }
   if (!mode)      { showToast('กรุณาเลือกรูปแบบการลา'); return; }
   if (!reason)    { showToast('กรุณากรอกเหตุผลการลา'); return; }
-  if (mode === 'HOURLY' && (!hourlyValue || Number(hourlyValue) <= 0)) {
-    showToast('กรุณาระบุจำนวนชั่วโมงที่ลา'); return;
+  if (mode === 'HOURLY' && (!timeFrom || !timeTo)) {
+    showToast('กรุณาเลือกเวลาเริ่มและสิ้นสุด'); return;
   }
   // ครึ่งวัน/รายชั่วโมง = วันเดียว (บังคับ dateTo = dateFrom)
   const singleDay = (mode === 'HALF_AM' || mode === 'HALF_PM' || mode === 'HOURLY');
@@ -108,7 +162,8 @@ function submitLeave() {
   gasRun('leaveSubmit', {
     hrToken: S.hrToken,
     leaveType, dateFrom, dateTo: finalDateTo, mode,
-    hourlyValue: mode === 'HOURLY' ? Number(hourlyValue) : null,
+    timeFrom: mode === 'HOURLY' ? timeFrom : '',
+    timeTo:   mode === 'HOURLY' ? timeTo : '',
     reason, fileUrl,
   })
     .withSuccessHandler(r => {
@@ -158,21 +213,83 @@ function lvRenderHistory(list) {
     box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ยังไม่มีประวัติการลา</div>';
     return;
   }
-  box.innerHTML = list.map(r => {
-    const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
-    const dateRange = r.dateFrom === r.dateTo ? r.dateFrom : `${r.dateFrom} – ${r.dateTo}`;
-    return `<div class="lv-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="font-weight:600">${lvEsc(lvTypeName(r.leaveType))}</div>
-        <span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span>
-      </div>
-      <div style="font-size:13px;color:var(--tx2);margin-top:4px">
-        ${lvEsc(dateRange)} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
-      </div>
-      <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
-      ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
-    </div>`;
-  }).join('');
+
+  // แยก 3 กลุ่ม: รออนุมัติ (แยกการ์ด), อนุมัติแล้ว (รวมตามประเภท), ปฏิเสธ (ไม่แสดง)
+  const pending = list.filter(r => r.status.indexOf('PENDING') === 0);
+  const approved = list.filter(r => r.status === 'APPROVED');
+
+  let html = '';
+
+  // ── รออนุมัติ: แยกการ์ดแต่ละรายการ ──
+  if (pending.length) {
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#c47d0a">รออนุมัติ</div>';
+    html += pending.map(r => lvHistoryCard(r)).join('');
+  }
+
+  // ── อนุมัติแล้ว: รวมการ์ดตามประเภท ──
+  if (approved.length) {
+    // จัดกลุ่มตาม leaveType
+    const byType = {};
+    approved.forEach(r => { (byType[r.leaveType] = byType[r.leaveType] || []).push(r); });
+
+    html += '<div style="font-size:13px;font-weight:600;margin:16px 0 8px">อนุมัติแล้ว</div>';
+    Object.keys(byType).forEach(type => {
+      const items = byType[type];
+      const totalHours = items.reduce((s, r) => s + (r.hours || 0), 0);
+      html += `<div class="lv-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-weight:600">${lvEsc(lvTypeName(type))}: ${lvEsc(hoursToDayTextClient(totalHours))}</div>
+          <span class="lv-badge lv-ok">อนุมัติแล้ว</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${items.map(r => `<div style="font-size:13px;color:var(--tx2);padding-left:8px;border-left:2px solid var(--bd)">
+            ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
+          </div>`).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  if (!html) html = '<div style="text-align:center;padding:30px;color:var(--tx3)">ยังไม่มีรายการ</div>';
+  box.innerHTML = html;
+}
+
+// การ์ดรายการเดี่ยว (สำหรับรออนุมัติ)
+function lvHistoryCard(r) {
+  const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
+  return `<div class="lv-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="font-weight:600">${lvEsc(lvTypeName(r.leaveType))}</div>
+      <span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span>
+    </div>
+    <div style="font-size:13px;color:var(--tx2);margin-top:4px">
+      ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
+    </div>
+    <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
+    ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+  </div>`;
+}
+
+// format ช่วงวันเวลาแบบ dd/mm/yyyy (HH:mm) ตามโหมด
+function lvFormatRange(r) {
+  const fmt = (d) => { if (!d) return ''; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+  const df = fmt(r.dateFrom), dt = fmt(r.dateTo);
+  if (r.mode === 'FULL')    return `${df} (08:30) – ${dt} (18:00)`;
+  if (r.mode === 'HALF_AM') return `${df} (08:30) – ${df} (12:00)`;
+  if (r.mode === 'HALF_PM') return `${df} (13:00) – ${df} (18:00)`;
+  if (r.mode === 'HOURLY')  return `${df} (${r.timeFrom || '?'}) – ${df} (${r.timeTo || '?'})`;
+  return `${df} – ${dt}`;
+}
+
+// แปลงชั่วโมง → "X วัน Y ชม." ฝั่ง client (ตรงกับ server, WORK_HOURS_PER_DAY=8.5)
+function hoursToDayTextClient(hours) {
+  const perDay = 8.5;
+  const h = Number(hours) || 0;
+  const days = Math.floor(h / perDay);
+  const rem = +(h - days * perDay).toFixed(2);
+  if (days > 0 && rem > 0) return `${days} วัน ${rem} ชม.`;
+  if (days > 0) return `${days} วัน`;
+  return `${rem} ชม.`;
 }
 
 // ═══════════════ หน้า "รออนุมัติ" (ผู้อนุมัติ) ═══════════════
@@ -198,7 +315,6 @@ function lvRenderApprovals(list) {
   }
   box.innerHTML = list.map(r => {
     const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
-    const dateRange = r.dateFrom === r.dateTo ? r.dateFrom : `${r.dateFrom} – ${r.dateTo}`;
     return `<div class="lv-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
@@ -208,7 +324,7 @@ function lvRenderApprovals(list) {
         <span class="lv-badge lv-wait">${lvEsc(st.text)}</span>
       </div>
       <div style="font-size:13px;color:var(--tx2);margin-top:6px">
-        ${lvEsc(dateRange)} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
+        ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
       </div>
       <div style="font-size:13px;margin-top:6px;padding:8px;background:var(--sf2);border-radius:6px">${lvEsc(r.reason)}</div>
       ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
@@ -278,6 +394,10 @@ function initLeaveBindings() {
 
   // หน้าขอลา
   on('lv-mode', 'change', lvOnModeChange);
+  on('lv-date-from', 'change', lvUpdatePreview);
+  on('lv-date-to', 'change', lvUpdatePreview);
+  on('lv-time-from', 'change', lvUpdatePreview);
+  on('lv-time-to', 'change', lvUpdatePreview);
   on('lv-submit', 'click', submitLeave);
   on('lv-to-history', 'click', () => go('leave-history'));
 
