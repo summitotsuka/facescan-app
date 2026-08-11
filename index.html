@@ -209,6 +209,15 @@ select.inp option{background:var(--sf2)}
 .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
 .spin.dk{border-color:rgba(0,0,0,.12);border-top-color:var(--ac)}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* ── ระบบลา ── */
+.lbl{display:block;font-size:13px;font-weight:500;color:var(--tx2);margin-bottom:6px}
+.lv-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px}
+.lv-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.lv-badge.lv-wait{background:rgba(234,159,39,.15);color:#c47d0a}
+.lv-badge.lv-ok{background:rgba(5,150,105,.15);color:var(--ok)}
+.lv-badge.lv-no{background:rgba(220,38,38,.12);color:var(--er)}
+select.inp{cursor:pointer}
+textarea.inp{resize:vertical;min-height:60px}
 </style>
 </head>
 <body>
@@ -221,6 +230,7 @@ select.inp option{background:var(--sf2)}
       <button class="nav-tab active" id="tab-in">เช็คอิน</button>
       <button class="nav-tab"        id="tab-out">เช็คเอาต์</button>
       <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
+      <button class="nav-tab"        id="tab-leave">ลางาน</button>
       <!-- เมนู HR (ซ่อนไว้ก่อน แสดงเมื่อ role=HR) -->
       <button class="nav-tab hr" id="tab-hr-dash" style="display:none">HR</button>
     </div>
@@ -578,6 +588,15 @@ select.inp option{background:var(--sf2)}
       <div style="flex:1">
         <div class="hr-menu-title">เปิดโหมด Kiosk</div>
         <div class="hr-menu-desc">เครื่องสแกนหน้าเช็คอิน/เอาต์</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-leave-approve">
+      <div class="hr-menu-icon" style="background:rgba(234,159,39,.15);color:#c47d0a">✔</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อนุมัติการลา</div>
+        <div class="hr-menu-desc">คำขอลาที่รอฝ่ายบุคคลอนุมัติ</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -956,6 +975,93 @@ select.inp option{background:var(--sf2)}
   </div>
 </div>
 
+<!-- ═══════════════ ระบบลา: หน้าขอลา ═══════════════ -->
+<div class="page" id="page-leave-form">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="lv-form-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">ขอลางาน</h2>
+  </div>
+
+  <div class="card">
+    <div style="margin-bottom:12px">
+      <label class="lbl">ประเภทการลา</label>
+      <select id="lv-type" class="inp"></select>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label class="lbl">รูปแบบการลา</label>
+      <select id="lv-mode" class="inp">
+        <option value="">— เลือกรูปแบบ —</option>
+        <option value="FULL">เต็มวัน</option>
+        <option value="HALF_AM">ครึ่งวันเช้า (3.5 ชม.)</option>
+        <option value="HALF_PM">ครึ่งวันบ่าย (5 ชม.)</option>
+        <option value="HOURLY">ลาเป็นชั่วโมง</option>
+      </select>
+    </div>
+
+    <div id="lv-hourly-wrap" style="display:none;margin-bottom:12px">
+      <label class="lbl">จำนวนชั่วโมง</label>
+      <input type="number" id="lv-hourly" class="inp" min="0.5" step="0.5" placeholder="เช่น 2">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <label class="lbl">วันที่เริ่มลา</label>
+        <input type="date" id="lv-date-from" class="inp">
+      </div>
+      <div style="flex:1">
+        <label class="lbl">ถึงวันที่ (เต็มวัน)</label>
+        <input type="date" id="lv-date-to" class="inp">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label class="lbl">เหตุผล <span style="color:var(--er)">*</span></label>
+      <textarea id="lv-reason" class="inp" rows="3" placeholder="ระบุเหตุผลการลา"></textarea>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label class="lbl">ลิงก์ไฟล์แนบ (ถ้ามี)</label>
+      <input type="text" id="lv-file" class="inp" placeholder="วางลิงก์ Google Drive / รูป (ไม่บังคับ)">
+    </div>
+
+    <button class="btn" id="lv-submit" style="width:100%">ส่งคำขอลา</button>
+    <button class="btn o sm" id="lv-to-history" style="width:100%;margin-top:8px">ดูประวัติการลา</button>
+  </div>
+</div>
+
+<!-- ═══════════════ ระบบลา: หน้าประวัติการลา ═══════════════ -->
+<div class="page" id="page-leave-history">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="lv-history-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">ประวัติการลา</h2>
+  </div>
+  <div id="lv-history-summary" style="margin-bottom:16px"></div>
+  <div id="lv-history-list"></div>
+  <button class="btn o sm" id="lv-to-form" style="width:100%;margin-top:12px">+ ขอลาใหม่</button>
+</div>
+
+<!-- ═══════════════ ระบบลา: หน้ารออนุมัติ (ผู้อนุมัติ) ═══════════════ -->
+<div class="page" id="page-leave-approve">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="lv-approve-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">คำขอลารออนุมัติ</h2>
+  </div>
+  <div id="lv-approval-list"></div>
+</div>
+
+<!-- ═══════════════ ระบบลา: dialog ปฏิเสธ ═══════════════ -->
+<div class="overlay" id="lv-reject-overlay" style="display:none">
+  <div class="res-card" style="text-align:left">
+    <div style="font-size:16px;font-weight:600;margin-bottom:12px">เหตุผลที่ไม่อนุมัติ</div>
+    <textarea id="lv-reject-reason" class="inp" rows="3" placeholder="ระบุเหตุผล"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn o sm" id="lv-reject-cancel" style="flex:1">ยกเลิก</button>
+      <button class="btn sm" id="lv-reject-confirm" style="flex:1;background:var(--er)">ยืนยันไม่อนุมัติ</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="res-card">
     <div class="r-icon" id="ri">✅</div>
@@ -1289,13 +1395,13 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
   // sync tab highlight — หน้า HR ทั้งหมดให้แท็บ HR active
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active','co','ht'));
-  const m = { checkin:'tab-in', checkout:'tab-out', history:'tab-hist', 'hr-dash':'tab-hr-dash', 'hr-dashboard':'tab-hr-dash', 'hr-employees':'tab-hr-dash' };
+  const m = { checkin:'tab-in', checkout:'tab-out', history:'tab-hist', 'leave-form':'tab-leave', 'leave-history':'tab-leave', 'hr-dash':'tab-hr-dash', 'hr-dashboard':'tab-hr-dash', 'hr-employees':'tab-hr-dash' };
   if (m[id]) {
     const t = document.getElementById(m[id]);
     if (t) t.classList.add(id==='checkout'?'co': id==='history'?'ht':'active');
@@ -1324,6 +1430,10 @@ function go(id) {
   if (id === 'kiosk') {
     loadKioskPage();
   }
+  // ── ระบบลา (ฟังก์ชันจาก leave.js) ──
+  if (id === 'leave-form')    { if (typeof loadLeaveForm === 'function') loadLeaveForm(); }
+  if (id === 'leave-history') { if (typeof loadLeaveHistory === 'function') loadLeaveHistory(); }
+  if (id === 'leave-approve') { if (typeof loadLeaveApprovals === 'function') loadLeaveApprovals(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
@@ -1341,7 +1451,7 @@ function tab(id, el) { go(id); }
  */
 function applyRoleMenus(role) {
   const isHR = role === 'HR';
-  const empTabs = ['tab-in', 'tab-out', 'tab-hist'];
+  const empTabs = ['tab-in', 'tab-out', 'tab-hist', 'tab-leave'];
   const hrTabs  = ['tab-hr-dash'];
 
   empTabs.forEach(id => {
@@ -3141,6 +3251,11 @@ applyLogo();
   var ocl = document.querySelector('.res-card .btn.o');
   if (ocl) ocl.addEventListener('click', closeOv);
 })();
+</script>
+<script src="leave.js"></script>
+<script>
+  // ผูก event ระบบลา หลัง leave.js โหลดเสร็จ
+  if (typeof initLeaveBindings === 'function') initLeaveBindings();
 </script>
 </body>
 </html>
