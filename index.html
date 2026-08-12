@@ -1034,8 +1034,10 @@ textarea.inp{resize:vertical;min-height:60px}
     </div>
 
     <div style="margin-bottom:16px">
-      <label class="lbl">ลิงก์ไฟล์แนบ (ถ้ามี)</label>
-      <input type="text" id="lv-file" class="inp" placeholder="วางลิงก์ Google Drive / รูป (ไม่บังคับ)">
+      <label class="lbl">ไฟล์แนบ (รูปภาพ หรือ PDF — ไม่บังคับ)</label>
+      <input type="file" id="lv-file-input" class="inp" accept="image/*,application/pdf" style="padding:8px">
+      <div id="lv-file-status" style="font-size:12px;color:var(--tx3);margin-top:4px"></div>
+      <input type="hidden" id="lv-file">
     </div>
 
     <button class="btn" id="lv-submit" style="width:100%">ส่งคำขอลา</button>

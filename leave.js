@@ -53,6 +53,9 @@ function loadLeaveForm() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const modeEl = document.getElementById('lv-mode'); if (modeEl) modeEl.value = '';
+  const fileInput = document.getElementById('lv-file-input'); if (fileInput) fileInput.value = '';
+  const fileStatus = document.getElementById('lv-file-status'); if (fileStatus) fileStatus.textContent = '';
+  const prev = document.getElementById('lv-preview'); if (prev) prev.style.display = 'none';
   document.getElementById('lv-hourly-wrap').style.display = 'none';
 
   // โหลดประเภท (ถ้ายังไม่มี cache)
@@ -73,6 +76,41 @@ function lvFillTypes() {
   if (!LV.types.length) { sel.innerHTML = '<option value="">— ไม่มีประเภทการลา —</option>'; return; }
   sel.innerHTML = '<option value="">— เลือกประเภท —</option>' +
     LV.types.map(t => `<option value="${lvEsc(t.id)}">${lvEsc(t.name)}${t.maxDays ? ` (สิทธิ์ ${t.maxDays} วัน)` : ''}</option>`).join('');
+}
+
+// ── อัปโหลดไฟล์แนบ (รูป/PDF) ──
+function lvOnFilePick() {
+  const input = document.getElementById('lv-file-input');
+  const status = document.getElementById('lv-file-status');
+  const hidden = document.getElementById('lv-file');
+  hidden.value = '';
+  if (!input.files || !input.files[0]) { status.textContent = ''; return; }
+
+  const file = input.files[0];
+  // จำกัดชนิด
+  const okType = /^image\//.test(file.type) || file.type === 'application/pdf';
+  if (!okType) { status.textContent = 'รองรับเฉพาะรูปภาพหรือ PDF'; status.style.color = 'var(--er)'; input.value = ''; return; }
+  // จำกัดขนาด 10MB
+  if (file.size > 10 * 1024 * 1024) { status.textContent = 'ไฟล์ใหญ่เกิน 10MB'; status.style.color = 'var(--er)'; input.value = ''; return; }
+
+  status.textContent = 'กำลังอัปโหลด...'; status.style.color = 'var(--tx3)';
+  const reader = new FileReader();
+  reader.onload = () => {
+    gasRun('leaveUploadFile', {
+      hrToken: S.hrToken,
+      fileData: reader.result,   // data URL base64
+      fileName: file.name,
+      mimeType: file.type,
+    })
+      .withSuccessHandler(r => {
+        if (!r || !r.success) { status.textContent = (r && r.message) || 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; return; }
+        hidden.value = r.fileUrl;
+        status.textContent = '✓ แนบไฟล์แล้ว'; status.style.color = 'var(--ok)';
+      })
+      .withFailureHandler(e => { status.textContent = 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; });
+  };
+  reader.onerror = () => { status.textContent = 'อ่านไฟล์ไม่สำเร็จ'; status.style.color = 'var(--er)'; };
+  reader.readAsDataURL(file);
 }
 
 // เปลี่ยนโหมดการลา → แสดง/ซ่อนช่อง + อัปเดตสรุปเวลา
@@ -398,6 +436,7 @@ function initLeaveBindings() {
   on('lv-date-to', 'change', lvUpdatePreview);
   on('lv-time-from', 'change', lvUpdatePreview);
   on('lv-time-to', 'change', lvUpdatePreview);
+  on('lv-file-input', 'change', lvOnFilePick);
   on('lv-submit', 'click', submitLeave);
   on('lv-to-history', 'click', () => go('leave-history'));
 
