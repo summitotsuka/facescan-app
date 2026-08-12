@@ -22,6 +22,7 @@ const LV_STATUS = {
   PENDING_HR: { text: 'รออนุมัติ (ฝ่ายบุคคล)',   cls: 'lv-wait' },
   APPROVED:   { text: 'อนุมัติแล้ว',             cls: 'lv-ok' },
   REJECTED:   { text: 'ไม่อนุมัติ',              cls: 'lv-no' },
+  CANCELLED:  { text: 'ยกเลิกแล้ว',              cls: 'lv-no' },
 };
 
 // ป้ายชื่อโหมดการลา
@@ -93,24 +94,57 @@ function lvOnFilePick() {
   // จำกัดขนาด 10MB
   if (file.size > 10 * 1024 * 1024) { status.textContent = 'ไฟล์ใหญ่เกิน 10MB'; status.style.color = 'var(--er)'; input.value = ''; return; }
 
-  status.textContent = 'กำลังอัปโหลด...'; status.style.color = 'var(--tx3)';
+  status.textContent = 'กำลังเตรียมไฟล์...'; status.style.color = 'var(--tx3)';
+
+  // รูปภาพ → ย่อขนาดก่อนอัปโหลด (ประหยัด Drive) / PDF → อัปโหลดตามเดิม
+  if (/^image\//.test(file.type)) {
+    lvResizeImage(file, 1280, 0.82, (dataUrl, mime) => {
+      lvDoUpload(dataUrl, file.name, mime, status, hidden);
+    });
+  } else {
+    const reader = new FileReader();
+    reader.onload = () => lvDoUpload(reader.result, file.name, file.type, status, hidden);
+    reader.onerror = () => { status.textContent = 'อ่านไฟล์ไม่สำเร็จ'; status.style.color = 'var(--er)'; };
+    reader.readAsDataURL(file);
+  }
+}
+
+// ย่อรูปด้วย canvas — คงสัดส่วน, ด้านยาวสุดไม่เกิน maxDim, บีบอัด JPEG
+function lvResizeImage(file, maxDim, quality, cb) {
   const reader = new FileReader();
   reader.onload = () => {
-    gasRun('leaveUploadFile', {
-      hrToken: S.hrToken,
-      fileData: reader.result,   // data URL base64
-      fileName: file.name,
-      mimeType: file.type,
-    })
-      .withSuccessHandler(r => {
-        if (!r || !r.success) { status.textContent = (r && r.message) || 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; return; }
-        hidden.value = r.fileUrl;
-        status.textContent = '✓ แนบไฟล์แล้ว'; status.style.color = 'var(--ok)';
-      })
-      .withFailureHandler(e => { status.textContent = 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; });
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else        { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // PNG ที่มีความโปร่งใสจะกลายเป็นพื้นขาว แต่สำหรับใบลา/เอกสารไม่มีปัญหา
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      cb(dataUrl, 'image/jpeg');
+    };
+    img.onerror = () => cb(reader.result, file.type);   // ย่อไม่ได้ ใช้ต้นฉบับ
+    img.src = reader.result;
   };
-  reader.onerror = () => { status.textContent = 'อ่านไฟล์ไม่สำเร็จ'; status.style.color = 'var(--er)'; };
   reader.readAsDataURL(file);
+}
+
+// อัปโหลดจริง (ใช้ร่วมทั้งรูปที่ย่อแล้วและ PDF)
+function lvDoUpload(dataUrl, fileName, mimeType, status, hidden) {
+  status.textContent = 'กำลังอัปโหลด...'; status.style.color = 'var(--tx3)';
+  gasRun('leaveUploadFile', {
+    hrToken: S.hrToken, fileData: dataUrl, fileName: fileName, mimeType: mimeType,
+  })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { status.textContent = (r && r.message) || 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; return; }
+      hidden.value = r.fileUrl;
+      status.textContent = '✓ แนบไฟล์แล้ว'; status.style.color = 'var(--ok)';
+    })
+    .withFailureHandler(e => { status.textContent = 'อัปโหลดไม่สำเร็จ'; status.style.color = 'var(--er)'; });
 }
 
 // เปลี่ยนโหมดการลา → แสดง/ซ่อนช่อง + อัปเดตสรุปเวลา
@@ -290,11 +324,30 @@ function lvRenderHistory(list) {
 
   if (!html) html = '<div style="text-align:center;padding:30px;color:var(--tx3)">ยังไม่มีรายการ</div>';
   box.innerHTML = html;
+
+  // ผูกปุ่มยกเลิก (สร้างใหม่ทุกครั้งที่ render)
+  box.querySelectorAll('.lv-cancel-btn').forEach(b => {
+    b.addEventListener('click', () => cancelLeave(b.getAttribute('data-id')));
+  });
+}
+
+// ยกเลิกคำขอของตัวเอง (เฉพาะที่ยังรออนุมัติ)
+function cancelLeave(reqId) {
+  if (!reqId) return;
+  if (!confirm('ยืนยันยกเลิกคำขอลานี้?')) return;
+  gasRun('leaveCancel', { hrToken: S.hrToken, requestId: reqId })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { showToast((r && r.message) || 'ยกเลิกไม่สำเร็จ'); return; }
+      showToast('ยกเลิกคำขอเรียบร้อย', true);
+      loadLeaveHistory();
+    })
+    .withFailureHandler(e => showToast('เกิดข้อผิดพลาด'));
 }
 
 // การ์ดรายการเดี่ยว (สำหรับรออนุมัติ)
 function lvHistoryCard(r) {
   const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
+  const canCancel = r.status.indexOf('PENDING') === 0;
   return `<div class="lv-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
       <div style="font-weight:600">${lvEsc(lvTypeName(r.leaveType))}</div>
@@ -305,6 +358,7 @@ function lvHistoryCard(r) {
     </div>
     <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
     ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+    ${canCancel ? `<div style="margin-top:10px"><button class="btn o sm lv-cancel-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px">ยกเลิกคำขอ</button></div>` : ''}
   </div>`;
 }
 
@@ -351,35 +405,70 @@ function lvRenderApprovals(list) {
     box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ไม่มีคำขอรออนุมัติ</div>';
     return;
   }
-  box.innerHTML = list.map(r => {
-    const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
+  // แถบเครื่องมือ: เลือกทั้งหมด + อนุมัติที่เลือก
+  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:var(--sf2);border-radius:8px">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="lv-check-all" style="width:16px;height:16px"> เลือกทั้งหมด
+    </label>
+    <button class="btn sm" id="lv-approve-selected" style="width:auto;padding:6px 16px;font-size:13px;margin-left:auto;background:var(--ok)">อนุมัติที่เลือก</button>
+  </div>`;
+
+  html += list.map(r => {
+    const dr = lvFormatRange(r);
     return `<div class="lv-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:600">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:12px">(${lvEsc(r.empId)})</span></div>
-          <div style="font-size:13px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
+      <div style="display:flex;gap:10px">
+        <input type="checkbox" class="lv-appr-check" data-id="${lvEsc(r.requestId)}" style="width:17px;height:17px;margin-top:2px;flex-shrink:0">
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div style="font-weight:600">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:12px">(${lvEsc(r.empId)})</span></div>
+              <div style="font-size:13px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--tx2);margin-top:6px">${lvEsc(dr)} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
+          <div style="font-size:13px;margin-top:6px;padding:8px;background:var(--sf2);border-radius:6px">${lvEsc(r.reason)}</div>
+          ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn sm lv-approve-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;background:var(--ok)">อนุมัติ</button>
+            <button class="btn o sm lv-reject-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;color:var(--er);border-color:var(--er)">ไม่อนุมัติ</button>
+          </div>
         </div>
-        <span class="lv-badge lv-wait">${lvEsc(st.text)}</span>
-      </div>
-      <div style="font-size:13px;color:var(--tx2);margin-top:6px">
-        ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
-      </div>
-      <div style="font-size:13px;margin-top:6px;padding:8px;background:var(--sf2);border-radius:6px">${lvEsc(r.reason)}</div>
-      ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn lv-approve-btn" data-id="${lvEsc(r.requestId)}" style="flex:1;background:var(--ok)">อนุมัติ</button>
-        <button class="btn lv-reject-btn" data-id="${lvEsc(r.requestId)}" style="flex:1;background:var(--er)">ไม่อนุมัติ</button>
       </div>
     </div>`;
   }).join('');
 
-  // ผูก event ปุ่มอนุมัติ/ปฏิเสธ (สร้างใหม่ทุกครั้งที่ render)
-  box.querySelectorAll('.lv-approve-btn').forEach(b => {
-    b.addEventListener('click', () => approveLeave(b.getAttribute('data-id')));
+  box.innerHTML = html;
+
+  // ผูก event
+  box.querySelectorAll('.lv-approve-btn').forEach(b => b.addEventListener('click', () => approveLeave(b.getAttribute('data-id'))));
+  box.querySelectorAll('.lv-reject-btn').forEach(b => b.addEventListener('click', () => openRejectDialog(b.getAttribute('data-id'))));
+
+  const chkAll = document.getElementById('lv-check-all');
+  if (chkAll) chkAll.addEventListener('change', () => {
+    box.querySelectorAll('.lv-appr-check').forEach(c => { c.checked = chkAll.checked; });
   });
-  box.querySelectorAll('.lv-reject-btn').forEach(b => {
-    b.addEventListener('click', () => openRejectDialog(b.getAttribute('data-id')));
-  });
+  const btnSel = document.getElementById('lv-approve-selected');
+  if (btnSel) btnSel.addEventListener('click', approveSelected);
+}
+
+// อนุมัติหลายรายการที่เลือก (ทีละอันแบบต่อเนื่อง)
+function approveSelected() {
+  const ids = Array.from(document.querySelectorAll('.lv-appr-check:checked')).map(c => c.getAttribute('data-id'));
+  if (!ids.length) { showToast('กรุณาเลือกรายการที่ต้องการอนุมัติ'); return; }
+  if (!confirm(`ยืนยันอนุมัติ ${ids.length} รายการที่เลือก?`)) return;
+
+  let done = 0, failed = 0;
+  const next = (i) => {
+    if (i >= ids.length) {
+      showToast(`อนุมัติสำเร็จ ${done} รายการ` + (failed ? ` (ไม่สำเร็จ ${failed})` : ''), true);
+      loadLeaveApprovals();
+      return;
+    }
+    gasRun('leaveApprove', { hrToken: S.hrToken, requestId: ids[i] })
+      .withSuccessHandler(r => { if (r && r.success) done++; else failed++; next(i + 1); })
+      .withFailureHandler(() => { failed++; next(i + 1); });
+  };
+  next(0);
 }
 
 function approveLeave(reqId) {
@@ -426,6 +515,7 @@ function initLeaveBindings() {
 
   // เมนู
   on('tab-leave', 'click', () => go('leave-form'));
+  on('tab-leave-appr', 'click', () => go('leave-approve'));
   on('hr-menu-leave-approve', 'click', () => go('leave-approve'));
   on('menu-leave-request', 'click', () => go('leave-form'));
   on('menu-leave-history', 'click', () => go('leave-history'));

@@ -231,6 +231,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="nav-tab"        id="tab-out">เช็คเอาต์</button>
       <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
       <button class="nav-tab"        id="tab-leave">ลางาน</button>
+      <button class="nav-tab"        id="tab-leave-appr" style="display:none">อนุมัติลา</button>
       <!-- เมนู HR (ซ่อนไว้ก่อน แสดงเมื่อ role=HR) -->
       <button class="nav-tab hr" id="tab-hr-dash" style="display:none">HR</button>
     </div>
@@ -1241,6 +1242,7 @@ function saveSession(loginResult) {
       empId:   loginResult.employeeId,
       name:    loginResult.name,
       role:    loginResult.role || 'EMPLOYEE',
+      isApprover: !!loginResult.isApprover,
       shift:   loginResult.shift || 'A',
       shiftLabel: loginResult.shiftLabel || '',
       hrToken: loginResult.hrToken || null,
@@ -1261,6 +1263,7 @@ function restoreSession() {
 
   // กู้ state แล้วเข้าหน้าที่เหมาะสม — แต่ต้อง refresh สถานะ session เช็คอินจาก server
   S.empId = sess.empId; S.name = sess.name; S.role = sess.role;
+  S.isApprover = !!sess.isApprover;
   S.shift = sess.shift; S.skipGps = (sess.shift === 'DRIVER');
   S.hrToken = sess.hrToken;
 
@@ -1416,7 +1419,7 @@ function go(id) {
 
   // sync tab highlight — หน้า HR ทั้งหมดให้แท็บ HR active
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active','co','ht'));
-  const m = { checkin:'tab-in', checkout:'tab-out', history:'tab-hist', 'leave-form':'tab-leave', 'leave-history':'tab-leave', 'hr-dash':'tab-hr-dash', 'hr-dashboard':'tab-hr-dash', 'hr-employees':'tab-hr-dash' };
+  const m = { checkin:'tab-in', checkout:'tab-out', history:'tab-hist', 'leave-form':'tab-leave', 'leave-history':'tab-leave', 'leave-approve':'tab-leave-appr', 'hr-dash':'tab-hr-dash', 'hr-dashboard':'tab-hr-dash', 'hr-employees':'tab-hr-dash' };
   if (m[id]) {
     const t = document.getElementById(m[id]);
     if (t) t.classList.add(id==='checkout'?'co': id==='history'?'ht':'active');
@@ -1477,6 +1480,11 @@ function applyRoleMenus(role) {
     const el = document.getElementById(id);
     if (el) el.style.display = isHR ? '' : 'none';
   });
+
+  // แท็บ "อนุมัติลา" — แสดงให้ผู้อนุมัติที่เป็น EMPLOYEE (หัวหน้า/ผู้จัดการ)
+  // HR ไม่ต้องเห็น (มีเมนูอนุมัติในหน้า HR อยู่แล้ว)
+  const apprTab = document.getElementById('tab-leave-appr');
+  if (apprTab) apprTab.style.display = (!isHR && S.isApprover) ? '' : 'none';
 
   // ข้อความต้อนรับในหน้า HR
   if (isHR) {
@@ -2823,6 +2831,7 @@ function doLogin() {
       if (!r || !r.success) { showToast((r && r.message) || 'เข้าสู่ระบบไม่สำเร็จ'); return; }
       S.empId = r.employeeId; S.name = r.name;
       S.role = r.role || 'EMPLOYEE';
+      S.isApprover = !!r.isApprover;
       S.hrToken = r.hrToken || null;
       S.shift = r.shift || 'A';
       S.skipGps = (r.shift === 'DRIVER');  // กะคนขับ — ไม่ต้อง block GPS ฝั่ง client
