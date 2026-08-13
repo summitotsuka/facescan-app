@@ -256,44 +256,23 @@ function loadLeaveHistory() {
   const box = document.getElementById('lv-history-list');
   const sum = document.getElementById('lv-history-summary');
   box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3)">กำลังโหลด...</div>';
-  sum.innerHTML = '';
+  if (sum) sum.innerHTML = '';   // ไม่ใช้การ์ดสรุปแยกแล้ว (รวมเข้าการ์ดอนุมัติแล้ว)
 
   gasRun('leaveGetMyRequests', { hrToken: S.hrToken })
     .withSuccessHandler(r => {
       if (!r || !r.success) { box.innerHTML = '<div style="padding:20px;color:var(--er)">' + lvEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
       LV.myRequests = r.requests || [];
-      lvRenderSummary(r.summary || {});
-      lvRenderHistory(LV.myRequests);
+      lvRenderHistory(LV.myRequests, r.summary || {});
     })
     .withFailureHandler(e => { box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
 }
 
-function lvRenderSummary(summary) {
-  const sum = document.getElementById('lv-history-summary');
-  const keys = Object.keys(summary);
-  if (!keys.length) { sum.innerHTML = ''; return; }
+// format ช่วงรอบ yyyy-MM-dd → dd/mm/yyyy
+function lvFmtCycle(s) { if (!s) return ''; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
 
-  // format ช่วงรอบ dd/mm/yyyy
-  const fmtD = (s) => { if (!s) return ''; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; };
-
-  sum.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px">สรุปวันลาที่ใช้ไป (อนุมัติแล้ว)</div>' +
-    '<div style="display:flex;flex-direction:column;gap:8px">' +
-    keys.map(t => {
-      const s = summary[t];
-      const cycle = (s.cycleStart && s.cycleEnd) ? `${fmtD(s.cycleStart)} – ${fmtD(s.cycleEnd)}` : '';
-      return `<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <span style="color:var(--tx2);font-size:13px">${lvEsc(lvTypeName(t))}</span>
-          <b style="font-size:14px">${lvEsc(s.text)}</b>
-        </div>
-        ${cycle ? `<div style="font-size:11px;color:var(--tx3);margin-top:3px">รอบ ${lvEsc(cycle)}</div>` : ''}
-      </div>`;
-    }).join('') +
-    '</div>';
-}
-
-function lvRenderHistory(list) {
+function lvRenderHistory(list, summary) {
   const box = document.getElementById('lv-history-list');
+  summary = summary || {};
   if (!list.length) {
     box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ยังไม่มีประวัติการลา</div>';
     return;
@@ -311,21 +290,28 @@ function lvRenderHistory(list) {
     html += pending.map(r => lvHistoryCard(r)).join('');
   }
 
-  // ── อนุมัติแล้ว: รวมการ์ดตามประเภท ──
-  if (approved.length) {
-    // จัดกลุ่มตาม leaveType
+  // ── อนุมัติแล้ว: รวมการ์ดตามประเภท (ยอด+รอบมาจาก summary ที่นับถูกตามรอบ) ──
+  // แสดงเฉพาะรายการในรอบปัจจุบัน (inCycle) เพื่อให้ยอดหัวการ์ดตรงกับรายการย่อย
+  // ดูข้ามปี/เลือกช่วง → เมนูรายงานการลา (ทำเพิ่มภายหลัง)
+  const approvedInCycle = approved.filter(r => r.inCycle);
+  if (approvedInCycle.length) {
     const byType = {};
-    approved.forEach(r => { (byType[r.leaveType] = byType[r.leaveType] || []).push(r); });
+    approvedInCycle.forEach(r => { (byType[r.leaveType] = byType[r.leaveType] || []).push(r); });
 
-    html += '<div style="font-size:13px;font-weight:600;margin:16px 0 8px">อนุมัติแล้ว</div>';
+    html += '<div style="font-size:13px;font-weight:600;margin:16px 0 8px">อนุมัติแล้ว (รอบปัจจุบัน)</div>';
     Object.keys(byType).forEach(type => {
       const items = byType[type];
-      const totalHours = items.reduce((s, r) => s + (r.hours || 0), 0);
+      const s = summary[type] || {};
+      // ยอดรวม "ในรอบ" จาก server (ถ้าไม่มี = 0 วัน)
+      const totalText = s.text || '0 ชม.';
+      const cycle = (s.cycleStart && s.cycleEnd) ? `${lvFmtCycle(s.cycleStart)} – ${lvFmtCycle(s.cycleEnd)}` : '';
+
       html += `<div class="lv-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
-          <div style="font-weight:600">${lvEsc(lvTypeName(type))}: ${lvEsc(hoursToDayTextClient(totalHours))}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px">
+          <div style="font-weight:600">${lvEsc(lvTypeName(type))}: ${lvEsc(totalText)}</div>
           <span class="lv-badge lv-ok">อนุมัติแล้ว</span>
         </div>
+        ${cycle ? `<div style="font-size:11px;color:var(--tx3);margin-bottom:8px">รอบ ${lvEsc(cycle)}</div>` : '<div style="margin-bottom:8px"></div>'}
         <div style="display:flex;flex-direction:column;gap:6px">
           ${items.map(r => `<div style="font-size:13px;color:var(--tx2);padding-left:8px;border-left:2px solid var(--bd)">
             ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
