@@ -232,7 +232,9 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
       <button class="nav-tab"        id="tab-leave">ลางาน</button>
       <button class="nav-tab"        id="tab-leave-appr" style="display:none">อนุมัติลา</button>
-      <!-- เมนู HR (ซ่อนไว้ก่อน แสดงเมื่อ role=HR) -->
+      <!-- ปุ่มไปหน้าจัดการงานบุคคล (แสดงเฉพาะ HR) -->
+      <button class="nav-tab hr" id="nav-hr-work" style="display:none">งานบุคคล</button>
+      <!-- แท็บ HR เดิม (ไม่ใช้แล้ว ซ่อนถาวร) -->
       <button class="nav-tab hr" id="tab-hr-dash" style="display:none">HR</button>
     </div>
     <div class="nav-clock" id="clock">--:--:--</div>
@@ -1272,12 +1274,7 @@ function restoreSession() {
   const lbl = document.getElementById('ci-lbl');
   if (lbl) lbl.textContent = sess.name + ' · ' + sess.empId;
 
-  if (sess.role === 'HR') {
-    go('hr-dash');
-    return;
-  }
-
-  // EMPLOYEE: เช็คสถานะเช็คอินวันนี้จาก server ก่อนตัดสินหน้า
+  // ทุก role (รวม HR) เช็คสถานะเช็คอินวันนี้จาก server ก่อนตัดสินหน้า
   gasRun('getTodayStatus', { employeeId: sess.empId })
     .withSuccessHandler(st => {
       if (st && st.checkedIn && !st.checkedOut) {
@@ -1469,20 +1466,23 @@ function tab(id, el) { go(id); }
  */
 function applyRoleMenus(role) {
   const isHR = role === 'HR';
+  // เมนูพนักงาน — ทุกคนเห็น (รวม HR เพราะ HR ก็ลา/ตอกบัตรได้)
   const empTabs = ['tab-in', 'tab-out', 'tab-hist', 'tab-leave'];
-  const hrTabs  = ['tab-hr-dash'];
-
   empTabs.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = isHR ? 'none' : '';
-  });
-  hrTabs.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = isHR ? '' : 'none';
+    if (el) el.style.display = '';
   });
 
+  // แท็บ Dashboard เดิมของ HR — ไม่ใช้แล้ว (ย้ายไปปุ่ม "งานบุคคล") ซ่อนไว้
+  const hrDashTab = document.getElementById('tab-hr-dash');
+  if (hrDashTab) hrDashTab.style.display = 'none';
+
+  // ปุ่ม "งานบุคคล" บน nav — แสดงเฉพาะ HR
+  const hrWorkBtn = document.getElementById('nav-hr-work');
+  if (hrWorkBtn) hrWorkBtn.style.display = isHR ? '' : 'none';
+
   // แท็บ "อนุมัติลา" — แสดงให้ผู้อนุมัติที่เป็น EMPLOYEE (หัวหน้า/ผู้จัดการ)
-  // HR ไม่ต้องเห็น (มีเมนูอนุมัติในหน้า HR อยู่แล้ว)
+  // HR อนุมัติผ่านหน้างานบุคคล ไม่ต้องมีแท็บนี้
   const apprTab = document.getElementById('tab-leave-appr');
   if (apprTab) apprTab.style.display = (!isHR && S.isApprover) ? '' : 'none';
 
@@ -2852,10 +2852,9 @@ function doLogin() {
       applyRoleMenus(S.role);
 
       // navigate — ใช้ setTimeout เพื่อให้ browser mobile render ทัน
+      // HR เข้าหน้าเช็คอินเหมือนพนักงาน (ไปงานบุคคลผ่านปุ่ม nav)
       setTimeout(() => {
-        if (S.role === 'HR') {
-          go('hr-dash');
-        } else if (r.checkedIn && !r.checkedOut) {
+        if (r.checkedIn && !r.checkedOut) {
           if (r.inTime) startWT(r.inTime, r.inDate);
           go('checkout');
         } else {
@@ -3111,6 +3110,7 @@ applyLogo();
   on('tab-out',  'click', function() { tab('checkout', document.getElementById('tab-out')); });
   on('tab-hist', 'click', function() { tab('history',  document.getElementById('tab-hist')); });
   on('tab-hr-dash', 'click', function() { go('hr-dash'); });
+  on('nav-hr-work', 'click', function() { go('hr-dash'); });
 
   // HR menu cards
   on('hr-menu-dashboard', 'click', function() { go('hr-dashboard'); });
