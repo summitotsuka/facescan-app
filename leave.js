@@ -272,10 +272,23 @@ function lvRenderSummary(summary) {
   const sum = document.getElementById('lv-history-summary');
   const keys = Object.keys(summary);
   if (!keys.length) { sum.innerHTML = ''; return; }
-  sum.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px">สรุปการลาที่อนุมัติแล้ว (ปีนี้)</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-    keys.map(t => `<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-size:13px">
-      <span style="color:var(--tx2)">${lvEsc(lvTypeName(t))}:</span> <b>${lvEsc(summary[t].text)}</b></div>`).join('') +
+
+  // format ช่วงรอบ dd/mm/yyyy
+  const fmtD = (s) => { if (!s) return ''; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; };
+
+  sum.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px">สรุปวันลาที่ใช้ไป (อนุมัติแล้ว)</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+    keys.map(t => {
+      const s = summary[t];
+      const cycle = (s.cycleStart && s.cycleEnd) ? `${fmtD(s.cycleStart)} – ${fmtD(s.cycleEnd)}` : '';
+      return `<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="color:var(--tx2);font-size:13px">${lvEsc(lvTypeName(t))}</span>
+          <b style="font-size:14px">${lvEsc(s.text)}</b>
+        </div>
+        ${cycle ? `<div style="font-size:11px;color:var(--tx3);margin-top:3px">รอบ ${lvEsc(cycle)}</div>` : ''}
+      </div>`;
+    }).join('') +
     '</div>';
 }
 
