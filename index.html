@@ -1229,16 +1229,48 @@ function applyLogo() {
   });
 }
 
-/** เรียก GAS function ผ่าน HTTP POST — คืนค่าเป็น Promise */
-function callAPI(action, payload) {
+/** เรียก GAS function ผ่าน HTTP POST — คืนค่าเป็น Promise
+ *  มี retry อัตโนมัติเมื่อพลาด (GAS บางครั้งช้า/สะดุด) + timeout กันค้าง
+ */
+function callAPI(action, payload, attempt) {
+  attempt = attempt || 1;
+  const MAX_ATTEMPTS = 3;
+  const TIMEOUT_MS = 30000;   // GAS ตอบช้าได้ ให้เวลา 30 วิ
+
+  // timeout กัน fetch ค้างนานเกิน
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   return fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: action, payload: payload || {} }),
-  }).then(res => {
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
-  });
+    signal: controller.signal,
+  })
+    .then(res => {
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      // อ่านเป็น text ก่อน — กันกรณี GAS คืน HTML (redirect/หน้า error) แทน JSON
+      return res.text().then(txt => {
+        try {
+          return JSON.parse(txt);
+        } catch (e) {
+          // ไม่ใช่ JSON (มักเป็นหน้า login/redirect ของ Google ตอน GAS สะดุด) → ให้ retry
+          throw new Error('BAD_RESPONSE');
+        }
+      });
+    })
+    .catch(err => {
+      clearTimeout(timer);
+      // retry เมื่อยังไม่ครบจำนวน (timeout, network, หรือ response ไม่ใช่ JSON)
+      if (attempt < MAX_ATTEMPTS) {
+        // หน่วงก่อนลองใหม่ (เพิ่มขึ้นตามรอบ) เพื่อให้ GAS หายสะดุด
+        const delay = 800 * attempt;
+        return new Promise(resolve => setTimeout(resolve, delay))
+          .then(() => callAPI(action, payload, attempt + 1));
+      }
+      throw err;
+    });
 }
 
 /**
