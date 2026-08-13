@@ -603,6 +603,15 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
+
+    <div class="hr-menu-card" id="hr-menu-leave-report">
+      <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📊</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงานการลา</div>
+        <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
   </div>
 </div>
 
@@ -1056,7 +1065,10 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
   <div id="lv-history-summary" style="margin-bottom:16px"></div>
   <div id="lv-history-list"></div>
-  <button class="btn o sm" id="lv-to-form" style="width:100%;margin-top:12px">+ ขอลาใหม่</button>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn o sm" id="lv-to-form" style="flex:1">+ ขอลาใหม่</button>
+    <button class="btn o sm" id="lv-to-report" style="flex:1">รายงานการลา</button>
+  </div>
 </div>
 
 <!-- ═══════════════ ระบบลา: หน้ารออนุมัติ (ผู้อนุมัติ) ═══════════════ -->
@@ -1076,6 +1088,62 @@ textarea.inp{resize:vertical;min-height:60px}
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn o sm" id="lv-reject-cancel" style="flex:1">ยกเลิก</button>
       <button class="btn sm" id="lv-reject-confirm" style="flex:1;background:var(--er)">ยืนยันไม่อนุมัติ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ระบบลา: หน้ารายงานการลา ═══════════════ -->
+<div class="page" id="page-leave-report">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="lvr-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">รายงานการลา</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1">
+        <label class="lbl">ประเภท</label>
+        <select id="lvr-f-type" class="inp"><option value="">ทุกประเภท</option></select>
+      </div>
+      <div style="flex:1">
+        <label class="lbl">สถานะ</label>
+        <select id="lvr-f-status" class="inp">
+          <option value="">ทุกสถานะ</option>
+          <option value="PENDING_L1">รออนุมัติ (หัวหน้า)</option>
+          <option value="PENDING_L2">รออนุมัติ (ผู้จัดการ)</option>
+          <option value="PENDING_HR">รออนุมัติ (บุคคล)</option>
+          <option value="APPROVED">อนุมัติแล้ว</option>
+          <option value="REJECTED">ไม่อนุมัติ</option>
+          <option value="CANCELLED">ยกเลิกแล้ว</option>
+          <option value="VOIDED">ยกเลิกโดย HR</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <label class="lbl">ตั้งแต่วันที่</label>
+        <input type="date" id="lvr-f-from" class="inp">
+      </div>
+      <div style="flex:1">
+        <label class="lbl">ถึงวันที่</label>
+        <input type="date" id="lvr-f-to" class="inp">
+      </div>
+    </div>
+    <button class="btn" id="lvr-run" style="width:100%">ค้นหา</button>
+  </div>
+
+  <div id="lvr-result"></div>
+</div>
+
+<!-- ═══════════════ ระบบลา: dialog ยกเลิกโดย HR ═══════════════ -->
+<div class="overlay" id="lvr-void-overlay" style="display:none">
+  <div class="res-card" style="text-align:left">
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">ยกเลิกใบลา (โดยฝ่ายบุคคล)</div>
+    <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">ใช้กรณีอนุมัติผิดพลาด เช่น พนักงานมาทำงานในวันที่ลา</div>
+    <textarea id="lvr-void-reason" class="inp" rows="3" placeholder="ระบุเหตุผลที่ยกเลิก"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn o sm" id="lvr-void-cancel" style="flex:1">ปิด</button>
+      <button class="btn sm" id="lvr-void-confirm" style="flex:1;background:var(--er)">ยืนยันยกเลิก</button>
     </div>
   </div>
 </div>
@@ -1410,7 +1478,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1449,6 +1517,7 @@ function go(id) {
   if (id === 'leave-form')    { if (typeof loadLeaveForm === 'function') loadLeaveForm(); }
   if (id === 'leave-history') { if (typeof loadLeaveHistory === 'function') loadLeaveHistory(); }
   if (id === 'leave-approve') { if (typeof loadLeaveApprovals === 'function') loadLeaveApprovals(); }
+  if (id === 'leave-report')  { if (typeof loadLeaveReport === 'function') loadLeaveReport(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';

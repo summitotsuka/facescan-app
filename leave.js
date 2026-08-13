@@ -13,6 +13,9 @@ const LV = {
   myRequests: [],       // ประวัติของฉัน
   pending: [],          // รายการรออนุมัติ
   currentReject: null,  // requestId ที่กำลังจะปฏิเสธ
+  report: [],           // ผลรายงาน (หน้ารายงาน)
+  reportCanVoid: false, // ผู้ใช้ปัจจุบันยกเลิกใบลาได้ไหม (HR)
+  currentVoid: null,    // requestId ที่กำลังจะยกเลิกโดย HR
 };
 
 // ป้ายชื่อสถานะ (ไทย) + สี
@@ -23,6 +26,7 @@ const LV_STATUS = {
   APPROVED:   { text: 'อนุมัติแล้ว',             cls: 'lv-ok' },
   REJECTED:   { text: 'ไม่อนุมัติ',              cls: 'lv-no' },
   CANCELLED:  { text: 'ยกเลิกแล้ว',              cls: 'lv-no' },
+  VOIDED:     { text: 'ยกเลิกโดย HR',            cls: 'lv-no' },
 };
 
 // ป้ายชื่อโหมดการลา
@@ -508,6 +512,145 @@ function confirmReject() {
     .withFailureHandler(e => { closeRejectDialog(); showToast('เกิดข้อผิดพลาด'); });
 }
 
+// ═══════════════ หน้า "รายงานการลา" ═══════════════
+
+function loadLeaveReport() {
+  // โหลดประเภทลงตัวกรอง (ใช้ cache ถ้ามี)
+  const typeSel = document.getElementById('lvr-f-type');
+  if (typeSel) {
+    const fill = () => {
+      typeSel.innerHTML = '<option value="">ทุกประเภท</option>' +
+        LV.types.map(t => `<option value="${lvEsc(t.id)}">${lvEsc(t.name)}</option>`).join('');
+    };
+    if (LV.types.length) fill();
+    else gasRun('leaveGetTypes', { hrToken: S.hrToken })
+      .withSuccessHandler(r => { if (r && r.success) { LV.types = r.types || []; fill(); } });
+  }
+  // ตั้งค่าวันเริ่มต้น: ต้นเดือน - วันนี้
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const fmt = (d) => d.toISOString().slice(0,10);
+  const fFrom = document.getElementById('lvr-f-from');
+  const fTo = document.getElementById('lvr-f-to');
+  if (fFrom && !fFrom.value) fFrom.value = fmt(first);
+  if (fTo && !fTo.value) fTo.value = fmt(today);
+
+  runLeaveReport();
+}
+
+function runLeaveReport() {
+  const box = document.getElementById('lvr-result');
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3)">กำลังโหลด...</div>';
+
+  const payload = {
+    hrToken: S.hrToken,
+    leaveType: document.getElementById('lvr-f-type').value,
+    status:    document.getElementById('lvr-f-status').value,
+    dateFrom:  document.getElementById('lvr-f-from').value,
+    dateTo:    document.getElementById('lvr-f-to').value,
+  };
+
+  gasRun('leaveGetReport', payload)
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { box.innerHTML = '<div style="padding:20px;color:var(--er)">' + lvEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
+      LV.report = r.rows || [];
+      LV.reportCanVoid = !!r.canVoid;
+      lvRenderReport(LV.report);
+    })
+    .withFailureHandler(e => { box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
+}
+
+function lvRenderReport(rows) {
+  const box = document.getElementById('lvr-result');
+  if (!rows.length) {
+    box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ไม่พบข้อมูลตามเงื่อนไข</div>';
+    return;
+  }
+  // สรุปจำนวน + ปุ่ม export
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:13px;color:var(--tx2)">พบ ${rows.length} รายการ</div>
+    <button class="btn sm" id="lvr-export" style="width:auto;padding:6px 16px;font-size:13px">↓ Excel (CSV)</button>
+  </div>`;
+
+  // การ์ดต่อรายการ
+  html += rows.map(r => {
+    const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
+    const canVoid = LV.reportCanVoid && (r.status === 'APPROVED' || r.status.indexOf('PENDING') === 0);
+    return `<div class="lv-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:600">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:12px">(${lvEsc(r.empId)})</span></div>
+          <div style="font-size:13px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
+        </div>
+        <span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span>
+      </div>
+      <div style="font-size:13px;color:var(--tx2);margin-top:6px">${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
+      <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
+      ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+      ${canVoid ? `<div style="margin-top:10px"><button class="btn o sm lvr-void-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบลา</button></div>` : ''}
+    </div>`;
+  }).join('');
+
+  box.innerHTML = html;
+
+  // ผูกปุ่ม
+  const exp = document.getElementById('lvr-export');
+  if (exp) exp.addEventListener('click', exportReportCSV);
+  box.querySelectorAll('.lvr-void-btn').forEach(b => b.addEventListener('click', () => openVoidDialog(b.getAttribute('data-id'))));
+}
+
+// ── ส่งออก CSV (เปิดใน Excel, รองรับไทยด้วย UTF-8 BOM) ──
+function exportReportCSV() {
+  if (!LV.report.length) { showToast('ไม่มีข้อมูลให้ส่งออก'); return; }
+  const head = ['รหัส','ชื่อ','ประเภท','เริ่ม','ถึง','รูปแบบ','ชั่วโมง','สถานะ','เหตุผล','วันที่ยื่น'];
+  const esc = (v) => {
+    const s = String(v == null ? '' : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [head.join(',')];
+  LV.report.forEach(r => {
+    lines.push([
+      r.empId, r.empName, lvTypeName(r.leaveType),
+      lvFmtCycle(r.dateFrom), lvFmtCycle(r.dateTo),
+      LV_MODE[r.mode] || r.mode, r.hours,
+      (LV_STATUS[r.status] || {text:r.status}).text,
+      r.reason, r.createdAt,
+    ].map(esc).join(','));
+  });
+  const csv = '\uFEFF' + lines.join('\r\n');   // BOM ให้ Excel อ่านไทยถูก
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'leave-report-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── HR ยกเลิกใบลา (void) ──
+function openVoidDialog(reqId) {
+  LV.currentVoid = reqId;
+  document.getElementById('lvr-void-reason').value = '';
+  document.getElementById('lvr-void-overlay').style.display = 'flex';
+}
+function closeVoidDialog() {
+  LV.currentVoid = null;
+  document.getElementById('lvr-void-overlay').style.display = 'none';
+}
+function confirmVoid() {
+  const reason = document.getElementById('lvr-void-reason').value.trim();
+  if (!reason) { showToast('กรุณาระบุเหตุผลที่ยกเลิก'); return; }
+  if (!LV.currentVoid) return;
+  gasRun('leaveVoidByHR', { hrToken: S.hrToken, requestId: LV.currentVoid, voidReason: reason })
+    .withSuccessHandler(r => {
+      closeVoidDialog();
+      if (!r || !r.success) { showToast((r && r.message) || 'ยกเลิกไม่สำเร็จ'); return; }
+      showToast('ยกเลิกใบลาเรียบร้อย', true);
+      runLeaveReport();
+    })
+    .withFailureHandler(e => { closeVoidDialog(); showToast('เกิดข้อผิดพลาด'); });
+}
+
 // ═══════════════ ผูก event (เรียกตอนโหลดเสร็จ) ═══════════════
 function initLeaveBindings() {
   const on = (id, evt, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); };
@@ -535,6 +678,15 @@ function initLeaveBindings() {
   // dialog ปฏิเสธ
   on('lv-reject-cancel', 'click', closeRejectDialog);
   on('lv-reject-confirm', 'click', confirmReject);
+
+  // หน้ารายงาน
+  on('lvr-run', 'click', runLeaveReport);
+  on('lvr-void-cancel', 'click', closeVoidDialog);
+  on('lvr-void-confirm', 'click', confirmVoid);
+  on('lv-to-report', 'click', () => go('leave-report'));
+  on('lvr-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'checkin'));
+  on('hr-menu-leave-report', 'click', () => go('leave-report'));
+  on('tab-leave-report', 'click', () => go('leave-report'));
 
   // back buttons
   on('lv-form-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'checkin'));
