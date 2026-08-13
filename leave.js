@@ -181,7 +181,12 @@ function lvUpdatePreview() {
   let text = '';
 
   if (mode === 'FULL') {
-    text = `${fmt(df)} (08:30) – ${fmt(dt)} (18:00) · เต็มวัน`;
+    // นับจำนวนวัน (รวมวันแรก) — มีประโยชน์กับลายาว เช่นลาคลอด
+    const d1 = new Date(df + 'T00:00:00');
+    const d2 = new Date(dt + 'T00:00:00');
+    const days = Math.floor((d2 - d1) / 86400000) + 1;
+    const dayText = (days > 1) ? ` · ${days} วัน` : '';
+    text = `${fmt(df)} (08:30) – ${fmt(dt)} (18:00) · เต็มวัน${dayText}`;
   } else if (mode === 'HALF_AM') {
     text = `${fmt(df)} (08:30) – ${fmt(df)} (12:00) · ครึ่งวันเช้า 3.5 ชม.`;
   } else if (mode === 'HALF_PM') {
