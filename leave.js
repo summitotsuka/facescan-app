@@ -360,9 +360,45 @@ function lvHistoryCard(r) {
       ${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}
     </div>
     <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
+    ${lvStepper(r.status)}
     ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
     ${canCancel ? `<div style="margin-top:10px"><button class="btn o sm lv-cancel-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px">ยกเลิกคำขอ</button></div>` : ''}
   </div>`;
+}
+
+// แถบแสดงขั้นตอนการอนุมัติ — ไฮไลต์ว่าอยู่ขั้นไหน
+//  ขั้น: หัวหน้า → ผู้จัดการ → บุคคล → เสร็จ
+function lvStepper(status) {
+  const steps = [
+    { key: 'L1', label: 'หัวหน้า' },
+    { key: 'L2', label: 'ผู้จัดการ' },
+    { key: 'HR', label: 'บุคคล' },
+    { key: 'DONE', label: 'อนุมัติ' },
+  ];
+  // ขั้นที่กำลังรอ (index) — ขั้นก่อนหน้าถือว่าผ่านแล้ว
+  let activeIdx;
+  if (status === 'PENDING_L1') activeIdx = 0;
+  else if (status === 'PENDING_L2') activeIdx = 1;
+  else if (status === 'PENDING_HR') activeIdx = 2;
+  else if (status === 'APPROVED') activeIdx = 4;   // ผ่านหมด
+  else return '';   // REJECTED/CANCELLED/VOIDED ไม่แสดง stepper
+
+  const dots = steps.map((s, i) => {
+    let bg, col;
+    if (i < activeIdx) { bg = 'var(--ok)'; col = '#fff'; }          // ผ่านแล้ว
+    else if (i === activeIdx) { bg = '#c47d0a'; col = '#fff'; }     // กำลังรอ
+    else { bg = 'var(--sf2)'; col = 'var(--tx3)'; }                 // ยังไม่ถึง
+    const line = i < steps.length - 1 ? `<div style="flex:1;height:2px;background:${i < activeIdx ? 'var(--ok)' : 'var(--bd)'};margin:0 2px"></div>` : '';
+    return `<div style="display:flex;align-items:center;${i < steps.length-1 ? 'flex:1' : ''}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:18px;height:18px;border-radius:50%;background:${bg};color:${col};font-size:10px;display:flex;align-items:center;justify-content:center">${i < activeIdx ? '✓' : (i+1)}</div>
+        <div style="font-size:9px;color:var(--tx3);white-space:nowrap">${s.label}</div>
+      </div>
+      ${line}
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">${dots}</div>`;
 }
 
 // format ช่วงวันเวลาแบบ dd/mm/yyyy (HH:mm) ตามโหมด
@@ -542,8 +578,10 @@ function runLeaveReport() {
   const box = document.getElementById('lvr-result');
   box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3)">กำลังโหลด...</div>';
 
+  const empVal = document.getElementById('lvr-f-emp').value;
   const payload = {
     hrToken: S.hrToken,
+    empIds:    empVal ? [empVal] : null,
     leaveType: document.getElementById('lvr-f-type').value,
     status:    document.getElementById('lvr-f-status').value,
     dateFrom:  document.getElementById('lvr-f-from').value,
@@ -555,9 +593,24 @@ function runLeaveReport() {
       if (!r || !r.success) { box.innerHTML = '<div style="padding:20px;color:var(--er)">' + lvEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
       LV.report = r.rows || [];
       LV.reportCanVoid = !!r.canVoid;
+      // เติม dropdown ชื่อ (ครั้งแรก หรือเมื่อยังว่าง)
+      lvFillTeamDropdown(r.teamList || []);
       lvRenderReport(LV.report);
     })
     .withFailureHandler(e => { box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
+}
+
+// เติม dropdown ชื่อพนักงาน (คงค่าที่เลือกไว้)
+function lvFillTeamDropdown(list) {
+  const sel = document.getElementById('lvr-f-emp');
+  if (!sel) return;
+  // ถ้ามีแค่ตัวเอง (พนักงานทั่วไป) ซ่อน dropdown ไปเลย
+  if (list.length <= 1) { sel.parentElement.style.display = 'none'; return; }
+  sel.parentElement.style.display = '';
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">ทุกคน</option>' +
+    list.map(m => `<option value="${lvEsc(m.id)}">${lvEsc(m.name)} (${lvEsc(m.id)})</option>`).join('');
+  if (cur) sel.value = cur;
 }
 
 function lvRenderReport(rows) {
@@ -576,6 +629,13 @@ function lvRenderReport(rows) {
   html += rows.map(r => {
     const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
     const canVoid = LV.reportCanVoid && (r.status === 'APPROVED' || r.status.indexOf('PENDING') === 0);
+    // สายอนุมัติ (แสดงเฉพาะที่มีข้อมูล)
+    const chain = [];
+    if (r.l1By) chain.push(`หัวหน้า: ${lvEsc(r.l1By)}${r.l1At ? ' (' + lvEsc(lvShortDT(r.l1At)) + ')' : ''}`);
+    if (r.l2By) chain.push(`ผู้จัดการ: ${lvEsc(r.l2By)}${r.l2At ? ' (' + lvEsc(lvShortDT(r.l2At)) + ')' : ''}`);
+    if (r.hrBy) chain.push(`บุคคล: ${lvEsc(r.hrBy)}${r.hrAt ? ' (' + lvEsc(lvShortDT(r.hrAt)) + ')' : ''}`);
+    if (r.rejectBy) chain.push(`ปฏิเสธ/ยกเลิก: ${lvEsc(r.rejectBy)}`);
+
     return `<div class="lv-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
@@ -586,6 +646,8 @@ function lvRenderReport(rows) {
       </div>
       <div style="font-size:13px;color:var(--tx2);margin-top:6px">${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
       <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
+      ${chain.length ? `<div style="font-size:12px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)">${chain.join(' · ')}</div>` : ''}
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">เลขที่: ${lvEsc(r.requestId)}</div>
       ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
       ${canVoid ? `<div style="margin-top:10px"><button class="btn o sm lvr-void-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบลา</button></div>` : ''}
     </div>`;
@@ -599,22 +661,32 @@ function lvRenderReport(rows) {
   box.querySelectorAll('.lvr-void-btn').forEach(b => b.addEventListener('click', () => openVoidDialog(b.getAttribute('data-id'))));
 }
 
+// ย่อ datetime "yyyy-MM-dd HH:mm:ss" → "dd/mm HH:mm"
+function lvShortDT(s) {
+  if (!s) return '';
+  const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (m) return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`;
+  return String(s);
+}
+
 // ── ส่งออก CSV (เปิดใน Excel, รองรับไทยด้วย UTF-8 BOM) ──
 function exportReportCSV() {
   if (!LV.report.length) { showToast('ไม่มีข้อมูลให้ส่งออก'); return; }
-  const head = ['รหัส','ชื่อ','ประเภท','เริ่ม','ถึง','รูปแบบ','ชั่วโมง','สถานะ','เหตุผล','วันที่ยื่น'];
+  const head = ['เลขที่','รหัส','ชื่อ','ประเภท','เริ่ม','ถึง','เวลา','รูปแบบ','ชั่วโมง','สถานะ','เหตุผล',
+                'อนุมัติหัวหน้า','เวลา','อนุมัติผู้จัดการ','เวลา','อนุมัติบุคคล','เวลา','ปฏิเสธ/ยกเลิกโดย','วันที่ยื่น'];
   const esc = (v) => {
     const s = String(v == null ? '' : v);
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
   };
   const lines = [head.join(',')];
   LV.report.forEach(r => {
+    const timeRange = (r.mode === 'HOURLY' && r.timeFrom) ? `${r.timeFrom}-${r.timeTo}` : '';
     lines.push([
-      r.empId, r.empName, lvTypeName(r.leaveType),
-      lvFmtCycle(r.dateFrom), lvFmtCycle(r.dateTo),
+      r.requestId, r.empId, r.empName, lvTypeName(r.leaveType),
+      lvFmtCycle(r.dateFrom), lvFmtCycle(r.dateTo), timeRange,
       LV_MODE[r.mode] || r.mode, r.hours,
-      (LV_STATUS[r.status] || {text:r.status}).text,
-      r.reason, r.createdAt,
+      (LV_STATUS[r.status] || {text:r.status}).text, r.reason,
+      r.l1By, r.l1At, r.l2By, r.l2At, r.hrBy, r.hrAt, r.rejectBy, r.createdAt,
     ].map(esc).join(','));
   });
   const csv = '\uFEFF' + lines.join('\r\n');   // BOM ให้ Excel อ่านไทยถูก
