@@ -571,7 +571,23 @@ function loadLeaveReport() {
   if (fFrom && !fFrom.value) fFrom.value = fmt(first);
   if (fTo && !fTo.value) fTo.value = fmt(today);
 
-  runLeaveReport();
+  // ดึงรายชื่อทีมทันที (เบา เร็ว) เติม dropdown — ยังไม่ดึงข้อมูลการลา
+  const sel = document.getElementById('lvr-f-emp');
+  if (sel) sel.innerHTML = '<option value="">กำลังโหลดรายชื่อ...</option>';
+  gasRun('leaveGetMyTeam', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (r && r.success) {
+        LV.reportCanVoid = !!r.canVoid;
+        lvFillTeamDropdown(r.team || []);
+      } else if (sel) {
+        sel.innerHTML = '<option value="">เลือกชื่อพนักงาน</option>';
+      }
+    })
+    .withFailureHandler(() => { if (sel) sel.innerHTML = '<option value="">เลือกชื่อพนักงาน</option>'; });
+
+  // แสดงข้อความรอค้นหา (ยังไม่ดึงข้อมูลการลา)
+  const box = document.getElementById('lvr-result');
+  if (box) box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">เลือกเงื่อนไขแล้วกด “ค้นหา” เพื่อดูรายงาน</div>';
 }
 
 function runLeaveReport() {
@@ -593,8 +609,6 @@ function runLeaveReport() {
       if (!r || !r.success) { box.innerHTML = '<div style="padding:20px;color:var(--er)">' + lvEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
       LV.report = r.rows || [];
       LV.reportCanVoid = !!r.canVoid;
-      // เติม dropdown ชื่อ (ครั้งแรก หรือเมื่อยังว่าง)
-      lvFillTeamDropdown(r.teamList || []);
       lvRenderReport(LV.report);
     })
     .withFailureHandler(e => { box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
@@ -604,12 +618,16 @@ function runLeaveReport() {
 function lvFillTeamDropdown(list) {
   const sel = document.getElementById('lvr-f-emp');
   if (!sel) return;
-  // ถ้ามีแค่ตัวเอง (พนักงานทั่วไป) ซ่อน dropdown ไปเลย
-  if (list.length <= 1) { sel.parentElement.style.display = 'none'; return; }
-  sel.parentElement.style.display = '';
+  const people = Array.isArray(list) ? list : [];
+
+  // มีคนเดียว (ตัวเอง) = พนักงานทั่วไป → ซ่อน dropdown
+  const wrap = sel.parentElement;
+  if (people.length <= 1) { if (wrap) wrap.style.display = 'none'; return; }
+  if (wrap) wrap.style.display = '';
+
   const cur = sel.value;
   sel.innerHTML = '<option value="">ทุกคน</option>' +
-    list.map(m => `<option value="${lvEsc(m.id)}">${lvEsc(m.name)} (${lvEsc(m.id)})</option>`).join('');
+    people.map(m => `<option value="${lvEsc(m.id)}">${lvEsc(m.name || m.id)} (${lvEsc(m.id)})</option>`).join('');
   if (cur) sel.value = cur;
 }
 
