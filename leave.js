@@ -468,6 +468,7 @@ function lvRenderApprovals(list) {
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn sm lv-approve-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;background:var(--ok)">อนุมัติ</button>
             <button class="btn o sm lv-reject-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;color:var(--er);border-color:var(--er)">ไม่อนุมัติ</button>
+            <button class="btn o sm lv-apcancel-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:13px;color:var(--tx2)">ยกเลิกให้</button>
           </div>
         </div>
       </div>
@@ -479,6 +480,7 @@ function lvRenderApprovals(list) {
   // ผูก event
   box.querySelectorAll('.lv-approve-btn').forEach(b => b.addEventListener('click', () => approveLeave(b.getAttribute('data-id'))));
   box.querySelectorAll('.lv-reject-btn').forEach(b => b.addEventListener('click', () => openRejectDialog(b.getAttribute('data-id'))));
+  box.querySelectorAll('.lv-apcancel-btn').forEach(b => b.addEventListener('click', () => cancelByApprover(b.getAttribute('data-id'))));
 
   const chkAll = document.getElementById('lv-check-all');
   if (chkAll) chkAll.addEventListener('change', () => {
@@ -515,6 +517,20 @@ function approveLeave(reqId) {
       if (!r || !r.success) { showToast((r && r.message) || 'อนุมัติไม่สำเร็จ'); return; }
       showToast(r.message || 'อนุมัติเรียบร้อย', true);
       loadLeaveApprovals();   // refresh
+    })
+    .withFailureHandler(e => showToast('เกิดข้อผิดพลาด'));
+}
+
+// ── ผู้อนุมัติยกเลิกใบลาให้พนักงาน (กรณีพนักงานขอยกเลิกแต่เลยขั้นแรกมาแล้ว) ──
+function cancelByApprover(reqId) {
+  if (!reqId) return;
+  const reason = prompt('ยกเลิกใบลาให้พนักงาน\nระบุเหตุผล (เช่น พนักงานขอยกเลิก):', 'พนักงานขอยกเลิก');
+  if (reason === null) return;   // กด cancel
+  gasRun('leaveCancelByApprover', { hrToken: S.hrToken, requestId: reqId, cancelReason: reason.trim() })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { showToast((r && r.message) || 'ยกเลิกไม่สำเร็จ'); return; }
+      showToast('ยกเลิกใบลาเรียบร้อย', true);
+      loadLeaveApprovals();
     })
     .withFailureHandler(e => showToast('เกิดข้อผิดพลาด'));
 }
