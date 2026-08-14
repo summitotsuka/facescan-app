@@ -223,7 +223,7 @@ textarea.inp{resize:vertical;min-height:60px}
 <body>
 
 <nav>
-  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">Work Scan</span></div>
+  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">Work Scan</span><span id="app-version" style="font-size:10px;color:var(--tx3);margin-left:6px"></span></div>
   <div class="nav-right">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
@@ -1181,6 +1181,13 @@ textarea.inp{resize:vertical;min-height:60px}
 // ── GAS Web App URL — endpoint หลักของระบบ ──────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P_EWCNuPUQepKClFj6L1nSfccYhLD6CUsYJwMcuxjS7Ab/exec';
 
+// ── สวิตช์เปิด/ปิดเมนูเช็คอิน-เช็คเอาต์ (ปิดชั่วคราวตามคำขอฝ่ายบุคคล) ──
+// เปลี่ยนเป็น true เพื่อเปิดกลับเมื่อพร้อม — โค้ดเดิมยังอยู่ครบ
+const CHECKIN_ENABLED = false;
+
+// เวอร์ชันของโปรแกรม (แสดงบน UI เพื่อติดตามรุ่น)
+const APP_VERSION = '7.1.0';
+
 // ── โลโก้บริษัท ──────────────────────────────────────────────
 // ใส่ Google Drive File ID ของรูปโลโก้ (จากลิงก์ share: .../file/d/<FILE_ID>/view)
 // หรือใส่เป็น URL รูปเต็มก็ได้ ถ้าเว้นว่าง = ใช้โลโก้ตัวอักษร W เดิม
@@ -1380,6 +1387,9 @@ function restoreSession() {
   const lbl = document.getElementById('ci-lbl');
   if (lbl) lbl.textContent = sess.name + ' · ' + sess.empId;
 
+  // ถ้าปิดเมนูเช็คอิน → ไปหน้าเช็คเวลาตรงๆ ไม่ต้องเช็คสถานะเช็คอิน
+  if (!CHECKIN_ENABLED) { go(defaultLandingPage()); return; }
+
   // ทุก role (รวม HR) เช็คสถานะเช็คอินวันนี้จาก server ก่อนตัดสินหน้า
   gasRun('getTodayStatus', { employeeId: sess.empId })
     .withSuccessHandler(st => {
@@ -1388,10 +1398,10 @@ function restoreSession() {
         if (st.inTime) startWT(st.inTime, st.inDate);
         go('checkout');
       } else {
-        go('checkin');
+        go(defaultLandingPage());
       }
     })
-    .withFailureHandler(() => { go('checkin'); });
+    .withFailureHandler(() => { go(defaultLandingPage()); });
 }
 
 function logout() {
@@ -1573,11 +1583,16 @@ function tab(id, el) { go(id); }
  */
 function applyRoleMenus(role) {
   const isHR = role === 'HR';
-  // เมนูพนักงาน — ทุกคนเห็น (รวม HR เพราะ HR ก็ลา/ตอกบัตรได้)
-  const empTabs = ['tab-in', 'tab-out', 'tab-hist', 'tab-leave'];
-  empTabs.forEach(id => {
+  // เมนูพนักงาน — เช็คอิน/เอาต์ ขึ้นกับสวิตช์ CHECKIN_ENABLED, เช็คเวลา/ลางาน แสดงเสมอ
+  const alwaysTabs = ['tab-hist', 'tab-leave'];
+  alwaysTabs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = '';
+  });
+  // เช็คอิน/เช็คเอาต์ — ซ่อนถ้าปิดเมนู
+  ['tab-in', 'tab-out'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = CHECKIN_ENABLED ? '' : 'none';
   });
 
   // แท็บ Dashboard เดิมของ HR — ไม่ใช้แล้ว (ย้ายไปปุ่ม "งานบุคคล") ซ่อนไว้
@@ -1598,6 +1613,11 @@ function applyRoleMenus(role) {
     const w = document.getElementById('hr-welcome');
     if (w) w.textContent = S.name + ' · ' + S.empId;
   }
+}
+
+// หน้าเริ่มต้นหลัง login — ถ้าปิดเช็คอิน ไปหน้าเช็คเวลาแทน
+function defaultLandingPage() {
+  return CHECKIN_ENABLED ? 'checkin' : 'history';
 }
 
 // ========== HR DASHBOARD ==========
@@ -2959,13 +2979,13 @@ function doLogin() {
       applyRoleMenus(S.role);
 
       // navigate — ใช้ setTimeout เพื่อให้ browser mobile render ทัน
-      // HR เข้าหน้าเช็คอินเหมือนพนักงาน (ไปงานบุคคลผ่านปุ่ม nav)
+      // ถ้าปิดเมนูเช็คอิน → ไปหน้าเช็คเวลา (history) แทน
       setTimeout(() => {
-        if (r.checkedIn && !r.checkedOut) {
+        if (CHECKIN_ENABLED && r.checkedIn && !r.checkedOut) {
           if (r.inTime) startWT(r.inTime, r.inDate);
           go('checkout');
         } else {
-          go('checkin');
+          go(defaultLandingPage());
         }
       }, 50);
     })
@@ -3387,6 +3407,8 @@ applyLogo();
 <script>
   // ผูก event ระบบลา หลัง leave.js โหลดเสร็จ
   if (typeof initLeaveBindings === 'function') initLeaveBindings();
+  // แสดงเวอร์ชันบน UI
+  (function(){ const v = document.getElementById('app-version'); if (v) v.textContent = 'v' + APP_VERSION; })();
 </script>
 </body>
 </html>
