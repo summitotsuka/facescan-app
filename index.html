@@ -548,7 +548,7 @@ textarea.inp{resize:vertical;min-height:60px}
     <div class="hr-menu-card" id="hr-menu-report">
       <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">▤</div>
       <div style="flex:1">
-        <div class="hr-menu-title">รายงานรายบุคคล</div>
+        <div class="hr-menu-title">รายงานการบันทึกเวลา</div>
         <div class="hr-menu-desc">ดูประวัติการลงเวลาของพนักงานแต่ละคน</div>
       </div>
       <div class="hr-menu-arrow">›</div>
@@ -557,7 +557,7 @@ textarea.inp{resize:vertical;min-height:60px}
     <div class="hr-menu-card" id="hr-menu-export">
       <div class="hr-menu-icon" style="background:rgba(168,85,247,.15);color:var(--ac2)">⤓</div>
       <div style="flex:1">
-        <div class="hr-menu-title">Export เงินเดือน</div>
+        <div class="hr-menu-title">Export ข้อมูลเวลา</div>
         <div class="hr-menu-desc">ดาวน์โหลดข้อมูลชั่วโมงทำงานตามช่วงเวลา</div>
       </div>
       <div class="hr-menu-arrow">›</div>
@@ -760,7 +760,7 @@ textarea.inp{resize:vertical;min-height:60px}
   <button id="hrexp-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
 
   <div style="margin-bottom:14px">
-    <div style="font-size:17px;font-weight:600">Export เงินเดือน</div>
+    <div style="font-size:17px;font-weight:600">Export ข้อมูลเวลา</div>
     <div style="font-size:12px;color:var(--tx3);margin-top:2px">ดาวน์โหลดเวลาเข้า-ออกเป็นไฟล์ .txt สำหรับโปรแกรมเงินเดือน</div>
   </div>
 
@@ -815,9 +815,9 @@ textarea.inp{resize:vertical;min-height:60px}
     <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">ช่วงวันที่</div>
     <div style="display:flex;gap:8px">
       <div class="field" style="flex:1;margin:0"><label>ตั้งแต่</label>
-        <input class="inp" id="hrrep-from" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+        <input class="inp" id="hrrep-from" type="date"></div>
       <div class="field" style="flex:1;margin:0"><label>ถึง</label>
-        <input class="inp" id="hrrep-to" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+        <input class="inp" id="hrrep-to" type="date"></div>
     </div>
   </div>
 
@@ -851,6 +851,13 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 
   <button class="btn p" id="hrrep-generate" style="margin-bottom:10px">สร้างรายงาน</button>
+
+  <!-- โซนอันตราย: ล้างข้อมูลเก่า -->
+  <div class="card" style="padding:14px;margin-top:16px;border:1px solid rgba(220,38,38,.3)">
+    <div style="font-size:13px;font-weight:600;color:var(--er);margin-bottom:4px">⚠️ ล้างข้อมูลการลงเวลา</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">ลบข้อมูลตามช่วงวันที่ที่เลือกด้านบน เพื่อไม่ให้ฐานข้อมูลใหญ่เกินไป — ลบแล้วกู้คืนไม่ได้</div>
+    <button class="btn o sm" id="hrrep-delete" style="width:auto;padding:6px 16px;color:var(--er);border-color:var(--er)">ล้างข้อมูลช่วงนี้</button>
+  </div>
 
   <!-- ผลลัพธ์ -->
   <div id="hrrep-result" style="display:none">
@@ -1791,6 +1798,19 @@ function fmtDateTH(d) {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+// yyyy-MM-dd สำหรับ input type="date"
+function fmtISO(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+// แปลง yyyy-MM-dd → dd/mm/yyyy (ส่งให้ backend ที่รับรูปแบบไทย)
+function isoToTH(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+
 function renderExpList(search) {
   const list = document.getElementById('hrexp-emplist');
   const q = (search || '').toLowerCase();
@@ -1902,8 +1922,8 @@ function loadReportPage() {
   // วันที่ default = เดือนปัจจุบัน
   const now = new Date();
   const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  document.getElementById('hrrep-from').value = fmtDateTH(first);
-  document.getElementById('hrrep-to').value   = fmtDateTH(now);
+  document.getElementById('hrrep-from').value = fmtISO(first);
+  document.getElementById('hrrep-to').value   = fmtISO(now);
   // reset status tabs
   document.querySelectorAll('.rep-stat').forEach(b => b.classList.toggle('active', b.dataset.status === 'all'));
 
@@ -1953,9 +1973,11 @@ function hrRepSelectAll() { hrRepEmployees.forEach(e => { hrRepSelected[e.empId]
 function hrRepClearAll() { hrRepSelected = {}; renderRepList(document.getElementById('hrrep-search').value); updateRepCount(); }
 
 function hrRepGenerate() {
-  const from = document.getElementById('hrrep-from').value.trim();
-  const to   = document.getElementById('hrrep-to').value.trim();
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(from) || !/^\d{2}\/\d{2}\/\d{4}$/.test(to)) { showToast('กรุณากรอกวันที่ให้ถูกต้อง'); return; }
+  const fromISO = document.getElementById('hrrep-from').value.trim();
+  const toISO   = document.getElementById('hrrep-to').value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromISO) || !/^\d{4}-\d{2}-\d{2}$/.test(toISO)) { showToast('กรุณาเลือกวันที่ให้ครบ'); return; }
+  const from = isoToTH(fromISO);   // backend รับ dd/mm/yyyy
+  const to   = isoToTH(toISO);
   const ids = Object.keys(hrRepSelected);
   const btn = document.getElementById('hrrep-generate');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังสร้าง...';
@@ -1967,6 +1989,33 @@ function hrRepGenerate() {
       renderReport(r);
     })
     .withFailureHandler(e => { btn.disabled = false; btn.textContent = 'สร้างรายงาน'; showToast(e.message); });
+}
+
+// ── ล้างข้อมูลการลงเวลาตามช่วงวันที่ (2 ขั้น: เตือนสำรอง → พิมพ์ YES) ──
+function hrRepDelete() {
+  const fromISO = document.getElementById('hrrep-from').value.trim();
+  const toISO   = document.getElementById('hrrep-to').value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromISO) || !/^\d{4}-\d{2}-\d{2}$/.test(toISO)) { showToast('กรุณาเลือกช่วงวันที่ก่อนลบ'); return; }
+
+  // ขั้น 1: เตือนสำรองข้อมูล
+  const backedUp = confirm('⚠️ ต้องการลบข้อมูลการลงเวลา\nช่วง ' + isoToTH(fromISO) + ' ถึง ' + isoToTH(toISO) + '\n\nคุณได้สำรอง (Export) ข้อมูลไว้แล้วหรือยัง?\n\nกด "ตกลง" ถ้าสำรองแล้ว / "ยกเลิก" เพื่อไปสำรองก่อน');
+  if (!backedUp) return;
+
+  // ขั้น 2: พิมพ์ YES ยืนยัน
+  const confirmText = prompt('ยืนยันการลบถาวร — พิมพ์ YES (ตัวใหญ่) เพื่อลบข้อมูลช่วงนี้:', '');
+  if (confirmText === null) return;
+  if (confirmText.trim() !== 'YES') { showToast('พิมพ์ YES ไม่ถูกต้อง ยกเลิกการลบ'); return; }
+
+  const from = isoToTH(fromISO), to = isoToTH(toISO);
+  const btn = document.getElementById('hrrep-delete');
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังลบ...'; }
+  gasRun('hrDeleteAttendance', { hrToken: S.hrToken, dateFrom: from, dateTo: to, confirmText: confirmText.trim() })
+    .withSuccessHandler(r => {
+      if (btn) { btn.disabled = false; btn.textContent = 'ล้างข้อมูลช่วงนี้'; }
+      if (!r || !r.success) { showToast((r && r.message) || 'ลบไม่สำเร็จ'); return; }
+      showToast('ลบข้อมูลแล้ว ' + r.deleted + ' รายการ', true);
+    })
+    .withFailureHandler(e => { if (btn) { btn.disabled = false; btn.textContent = 'ล้างข้อมูลช่วงนี้'; } showToast(e.message); });
 }
 
 function renderReport(r) {
@@ -3262,14 +3311,11 @@ applyLogo();
 
   // HR รายงาน
   on('hrrep-back', 'click', function() { go('hr-dash'); });
-  on('hrrep-from', 'input', function() { maskDate(this); });
-  on('hrrep-from', 'keydown', function(e) { allowDateKeys(e); });
-  on('hrrep-to', 'input', function() { maskDate(this); });
-  on('hrrep-to', 'keydown', function(e) { allowDateKeys(e); });
   on('hrrep-search', 'input', function() { renderRepList(this.value); });
   on('hrrep-all', 'click', hrRepSelectAll);
   on('hrrep-none', 'click', hrRepClearAll);
   on('hrrep-generate', 'click', hrRepGenerate);
+  on('hrrep-delete', 'click', hrRepDelete);
   on('hrrep-csv', 'click', hrRepDownloadCSV);
   on('hrrep-pdf', 'click', hrRepDownloadPDF);
   document.querySelectorAll('.rep-stat').forEach(function(b) {
