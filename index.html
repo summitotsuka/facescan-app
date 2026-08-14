@@ -483,17 +483,12 @@ textarea.inp{resize:vertical;min-height:60px}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
       <div style="font-size:16px;font-weight:600" id="hist-title">ประวัติการลงเวลา</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:2px" id="hist-range-label">ย้อนหลัง 1 เดือน</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:2px" id="hist-range-label">ย้อนหลัง 60 วัน</div>
     </div>
     <button class="btn o sm" id="btn-hist-reload">รีเฟรช</button>
   </div>
 
-  <!-- ปุ่มเลือกช่วงเวลา 1/2/3 เดือน -->
-  <div style="display:flex;gap:6px;margin-bottom:14px" id="hist-range-tabs">
-    <button class="range-btn active" data-months="1">1 เดือน</button>
-    <button class="range-btn" data-months="2">2 เดือน</button>
-    <button class="range-btn" data-months="3">3 เดือน</button>
-  </div>
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px">ต้องการดูข้อมูลย้อนหลังมากกว่านี้ ติดต่อฝ่ายบุคคล</div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="hist-summary">
     <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
@@ -609,6 +604,15 @@ textarea.inp{resize:vertical;min-height:60px}
       <div style="flex:1">
         <div class="hr-menu-title">รายงานการลา</div>
         <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-finger">
+      <div class="hr-menu-icon" style="background:rgba(34,197,94,.15);color:#16a34a">🕐</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อัปโหลดเวลา</div>
+        <div class="hr-menu-desc">นำเข้าไฟล์เวลาจากเครื่องสแกนนิ้ว</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -1092,6 +1096,24 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ═══════════════ อัปโหลดเวลาจากเครื่องสแกนนิ้ว ═══════════════ -->
+<div class="page" id="page-finger">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="finger-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">อัปโหลดเวลาทำงาน</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-size:13px;color:var(--tx2);margin-bottom:10px">
+      เลือกไฟล์เวลาจากเครื่องสแกนนิ้ว (.txt) — รูปแบบ: รหัส วันที่ เวลา C/In หรือ C/Out
+    </div>
+    <input type="file" id="finger-file" accept=".txt,text/plain" class="inp" style="padding:8px">
+    <div id="finger-status" style="font-size:13px;margin-top:8px;color:var(--tx3)"></div>
+  </div>
+
+  <div id="finger-preview"></div>
+</div>
+
 <!-- ═══════════════ ระบบลา: หน้ารายงานการลา ═══════════════ -->
 <div class="page" id="page-leave-report">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1526,7 +1548,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1566,6 +1588,7 @@ function go(id) {
   if (id === 'leave-history') { if (typeof loadLeaveHistory === 'function') loadLeaveHistory(); }
   if (id === 'leave-approve') { if (typeof loadLeaveApprovals === 'function') loadLeaveApprovals(); }
   if (id === 'leave-report')  { if (typeof loadLeaveReport === 'function') loadLeaveReport(); }
+  if (id === 'finger')        { resetFingerPage(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
@@ -3031,20 +3054,13 @@ function doForgot() {
 // ========== HISTORY ==========
 function loadHistory(months) {
   if (!S.empId) return;
-  // ถ้าไม่ส่ง months มา ใช้ค่าที่เลือกล่าสุด (default 1)
-  if (months) S.histMonths = months;
-  if (!S.histMonths) S.histMonths = 1;
 
-  // update label + ปุ่ม active
   const lbl = document.getElementById('hist-range-label');
-  if (lbl) lbl.textContent = 'ย้อนหลัง ' + S.histMonths + ' เดือน';
-  document.querySelectorAll('.range-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.months, 10) === S.histMonths);
-  });
+  if (lbl) lbl.textContent = 'ย้อนหลัง 60 วัน';
 
   document.getElementById('hist-loading').style.display = 'block';
   document.getElementById('hist-card').style.display = 'none';
-  gasRun('getMyAttendance', { employeeId: S.empId, months: S.histMonths })
+  gasRun('getMyAttendance', { employeeId: S.empId, days: 60 })
     .withSuccessHandler(renderHistory)
     .withFailureHandler(e => { document.getElementById('hist-loading').style.display = 'none'; showToast(e.message); });
 }
@@ -3391,16 +3407,111 @@ applyLogo();
   // HISTORY
   on('btn-hist-reload', 'click', function() { loadHistory(); });
 
-  // ปุ่มเลือกช่วงเวลา 1/2/3 เดือน
-  document.querySelectorAll('.range-btn').forEach(function(b) {
-    b.addEventListener('click', function() {
-      loadHistory(parseInt(b.dataset.months, 10));
-    });
-  });
-
   // OVERLAY close
   var ocl = document.querySelector('.res-card .btn.o');
   if (ocl) ocl.addEventListener('click', closeOv);
+
+  // ══════════ อัปโหลดเวลาจากเครื่องสแกนนิ้ว ══════════
+  var FINGER = { fileText: '' };
+
+  function resetFingerPage() {
+    FINGER.fileText = '';
+    var fi = document.getElementById('finger-file'); if (fi) fi.value = '';
+    var st = document.getElementById('finger-status'); if (st) { st.textContent = ''; st.style.color = 'var(--tx3)'; }
+    var pv = document.getElementById('finger-preview'); if (pv) pv.innerHTML = '';
+  }
+  window.resetFingerPage = resetFingerPage;
+
+  function fingerEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // อ่านไฟล์ → ส่งไป preview
+  function onFingerFile(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var st = document.getElementById('finger-status');
+    st.textContent = 'กำลังอ่านไฟล์...'; st.style.color = 'var(--tx3)';
+    var reader = new FileReader();
+    reader.onload = function() {
+      FINGER.fileText = reader.result || '';
+      st.textContent = 'กำลังตรวจสอบข้อมูล...';
+      gasRun('fingerParsePreview', { hrToken: S.hrToken, fileText: FINGER.fileText })
+        .withSuccessHandler(renderFingerPreview)
+        .withFailureHandler(function(){ st.textContent = 'เกิดข้อผิดพลาด'; st.style.color = 'var(--er)'; });
+    };
+    reader.onerror = function(){ st.textContent = 'อ่านไฟล์ไม่สำเร็จ'; st.style.color = 'var(--er)'; };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  function renderFingerPreview(r) {
+    var st = document.getElementById('finger-status');
+    var pv = document.getElementById('finger-preview');
+    if (!r || !r.success) { st.textContent = (r && r.message) || 'ตรวจสอบไม่สำเร็จ'; st.style.color = 'var(--er)'; return; }
+    var s = r.summary;
+    st.textContent = 'ตรวจสอบเสร็จ';
+    st.style.color = 'var(--ok)';
+
+    var html = '<div class="card" style="margin-bottom:12px">';
+    html += '<div style="font-weight:600;margin-bottom:8px">สรุปผลการตรวจสอบ</div>';
+    html += '<div style="font-size:13px;line-height:1.8">';
+    html += 'รายการทั้งหมด: <b>' + s.total + '</b><br>';
+    html += 'จับคู่พนักงานได้: <b style="color:var(--ok)">' + s.matched + '</b><br>';
+    if (s.unmatched > 0) html += 'จับคู่ไม่ได้: <b style="color:var(--er)">' + s.unmatched + '</b> (รหัส: ' + fingerEsc(r.unmatchedIds.join(', ')) + ')<br>';
+    if (s.invalid > 0) html += 'บรรทัดผิดรูปแบบ (ข้าม): <b>' + s.invalid + '</b><br>';
+    html += '</div>';
+    if (s.unmatched > 0) html += '<div style="font-size:12px;color:var(--er);margin-top:6px">⚠️ รายการที่จับคู่ไม่ได้จะไม่ถูกบันทึก — ตรวจสอบ Payroll_ID ในชีต Employees</div>';
+    html += '<button class="btn" id="finger-confirm" style="width:100%;margin-top:12px;background:var(--ok)">ยืนยันบันทึก ' + s.matched + ' รายการ</button>';
+    html += '</div>';
+
+    // ตารางตัวอย่าง (สูงสุด 100 แถวแรก)
+    html += '<div class="card"><div style="font-weight:600;margin-bottom:8px;font-size:13px">ตัวอย่างข้อมูล</div>';
+    html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html += '<tr style="border-bottom:1px solid var(--bd);text-align:left"><th style="padding:4px">ชื่อ</th><th style="padding:4px">วันที่</th><th style="padding:4px">เวลา</th><th style="padding:4px">ประเภท</th><th style="padding:4px">สถานะ</th></tr>';
+    r.rows.slice(0, 100).forEach(function(row) {
+      var stTxt = row.status === 'LATE' ? '<span style="color:#c47d0a">สาย</span>' : (row.status === 'OK' ? 'ปกติ' : '-');
+      var rowStyle = row.matched ? '' : 'background:rgba(220,38,38,.06)';
+      html += '<tr style="border-bottom:1px solid var(--bd);' + rowStyle + '">' +
+        '<td style="padding:4px">' + fingerEsc(row.name) + '</td>' +
+        '<td style="padding:4px">' + fingerEsc(row.date) + '</td>' +
+        '<td style="padding:4px">' + fingerEsc(row.time) + '</td>' +
+        '<td style="padding:4px">' + (row.type === 'IN' ? 'เข้า' : 'ออก') + '</td>' +
+        '<td style="padding:4px">' + stTxt + '</td></tr>';
+    });
+    html += '</table></div>';
+    if (r.rows.length > 100) html += '<div style="font-size:12px;color:var(--tx3);margin-top:6px">แสดง 100 แถวแรกจาก ' + r.rows.length + ' แถว</div>';
+    html += '</div>';
+
+    pv.innerHTML = html;
+    var cf = document.getElementById('finger-confirm');
+    if (cf) cf.addEventListener('click', confirmFingerUpload);
+  }
+
+  function confirmFingerUpload() {
+    if (!FINGER.fileText) { showToast('ไม่มีข้อมูล'); return; }
+    var cf = document.getElementById('finger-confirm');
+    if (cf) { cf.disabled = true; cf.textContent = 'กำลังบันทึก...'; }
+    gasRun('fingerUploadConfirm', { hrToken: S.hrToken, fileText: FINGER.fileText })
+      .withSuccessHandler(function(r) {
+        if (!r || !r.success) { showToast((r && r.message) || 'บันทึกไม่สำเร็จ'); if (cf){ cf.disabled=false; cf.textContent='ยืนยันบันทึก'; } return; }
+        var msg = 'บันทึกสำเร็จ ' + r.saved + ' รายการ';
+        if (r.skipped > 0) msg += ' (ข้ามซ้ำ ' + r.skipped + ')';
+        showToast(msg, true);
+        var pv = document.getElementById('finger-preview');
+        pv.innerHTML = '<div class="card" style="text-align:center;padding:20px"><div style="font-size:32px">✅</div><div style="font-weight:600;margin-top:8px">' + msg + '</div>' +
+          (r.unmatched > 0 ? '<div style="font-size:12px;color:var(--er);margin-top:6px">จับคู่ไม่ได้ ' + r.unmatched + ' รายการ (ไม่บันทึก)</div>' : '') +
+          '<button class="btn o sm" id="finger-again" style="width:auto;padding:6px 16px;margin-top:12px">อัปโหลดไฟล์ใหม่</button></div>';
+        var ag = document.getElementById('finger-again');
+        if (ag) ag.addEventListener('click', resetFingerPage);
+      })
+      .withFailureHandler(function(){ showToast('เกิดข้อผิดพลาด'); if (cf){ cf.disabled=false; cf.textContent='ยืนยันบันทึก'; } });
+  }
+
+  // ผูกเมนู finger
+  var fingerFileInput = document.getElementById('finger-file');
+  if (fingerFileInput) fingerFileInput.addEventListener('change', onFingerFile);
+  var fingerMenu = document.getElementById('hr-menu-finger');
+  if (fingerMenu) fingerMenu.addEventListener('click', function(){ go('finger'); });
+  var fingerBack = document.getElementById('finger-back');
+  if (fingerBack) fingerBack.addEventListener('click', function(){ go('hr-dash'); });
 })();
 </script>
 <script src="leave.js"></script>
