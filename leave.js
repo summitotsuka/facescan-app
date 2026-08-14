@@ -417,16 +417,6 @@ function lvFormatRange(r) {
   return `${df} – ${dt}`;
 }
 
-// แปลงชั่วโมง → "X วัน Y ชม." ฝั่ง client (ตรงกับ server, WORK_HOURS_PER_DAY=8.5)
-function hoursToDayTextClient(hours) {
-  const perDay = 8.5;
-  const h = Number(hours) || 0;
-  const days = Math.floor(h / perDay);
-  const rem = +(h - days * perDay).toFixed(2);
-  if (days > 0 && rem > 0) return `${days} วัน ${rem} ชม.`;
-  if (days > 0) return `${days} วัน`;
-  return `${rem} ชม.`;
-}
 
 // ═══════════════ หน้า "รออนุมัติ" (ผู้อนุมัติ) ═══════════════
 
@@ -472,6 +462,9 @@ function lvRenderApprovals(list) {
           <div style="font-size:13px;color:var(--tx2);margin-top:6px">${lvEsc(dr)} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
           <div style="font-size:13px;margin-top:6px;padding:8px;background:var(--sf2);border-radius:6px">${lvEsc(r.reason)}</div>
           ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+          <div style="font-size:12px;margin-top:6px;color:${(r.attIn || r.attOut) ? '#c47d0a' : 'var(--tx3)'}">
+            เวลาเข้า/ออก (${(r.attIn || r.attOut) ? lvEsc((r.attIn || '—') + ' - ' + (r.attOut || '—')) : 'ไม่มี'})${(r.attIn || r.attOut) ? ' ⚠️' : ''}
+          </div>
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn sm lv-approve-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;background:var(--ok)">อนุมัติ</button>
             <button class="btn o sm lv-reject-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;color:var(--er);border-color:var(--er)">ไม่อนุมัติ</button>
