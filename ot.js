@@ -5,6 +5,7 @@
 
 const OT = {
   types: [],
+  myShift: 'A',
   myRequests: [],
   pending: [],
   report: [],
@@ -68,13 +69,14 @@ function loadOTForm() {
   };
   if (OT.types.length) fillTypes();
   else gasRun('otGetTypes', { hrToken: S.hrToken })
-    .withSuccessHandler(r => { if (r && r.success) { OT.types = r.types || []; fillTypes(); } });
+    .withSuccessHandler(r => { if (r && r.success) { OT.types = r.types || []; OT.myShift = r.myShift || 'A'; fillTypes(); } });
 
   // โหลดทีม (เผื่อหัวหน้าคีย์ให้ลูกทีม)
   gasRun('otGetMyTeam', { hrToken: S.hrToken })
     .withSuccessHandler(r => {
       if (r && r.success) {
         OT.team = r.team || [];
+        OT.myShift = r.myShift || OT.myShift || 'A';
         OT.isApprover = !!r.isApprover;
         OT.isHR = !!r.isHR;
         otFillEmpDropdown();
@@ -88,6 +90,49 @@ function loadOTForm() {
   OT.formFile = null;
   const fl = document.getElementById('ot-file-label'); if (fl) fl.textContent = 'แนบไฟล์ (ถ้ามี)';
   const prev = document.getElementById('ot-preview'); if (prev) prev.textContent = '';
+}
+
+// หากะของคนที่จะขอ OT (ถ้าหัวหน้าเลือกลูกทีม ใช้กะลูกทีม, ไม่งั้นกะตัวเอง)
+function otTargetShift() {
+  const empSel = document.getElementById('ot-emp');
+  const empId = empSel ? empSel.value : '';
+  if (empId) {
+    const m = OT.team.find(x => x.id.toUpperCase() === empId.toUpperCase());
+    if (m && m.shift) return m.shift;
+  }
+  return OT.myShift || 'A';
+}
+
+// วันนี้ / พรุ่งนี้ เป็น yyyy-MM-dd
+function otToday() { const d = new Date(); return d.toISOString().slice(0, 10); }
+function otTomorrow() { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); }
+
+// set ค่า default ตามประเภท OT + กะ (2.1-2.3)
+function otApplyTypeDefaults() {
+  const otType = document.getElementById('ot-type').value;
+  if (!otType) return;
+  const shift = (otTargetShift() || 'A').toUpperCase();
+  const isB = (shift === 'B');
+  const df = document.getElementById('ot-date-from');
+  const tf = document.getElementById('ot-time-from');
+  const dt = document.getElementById('ot-date-to');
+  const tt = document.getElementById('ot-time-to');
+  const today = otToday();
+
+  if (otType === 'HOLIDAY_WORK') {
+    // ทำงานวันหยุด: A/CLEANING/DRIVER วันนี้ 08:30-18:00 / B วันนี้→พรุ่งนี้ 20:30-06:00
+    if (isB) {
+      df.value = today; dt.value = otTomorrow(); tf.value = '20:30'; tt.value = '06:00';
+    } else {
+      df.value = today; dt.value = today; tf.value = '08:30'; tt.value = '18:00';
+    }
+  } else {
+    // NORMAL / HOLIDAY_OT: วันนี้ทั้งคู่, เวลาเริ่ม B=06:10 อื่น=18:10, เวลาสิ้นสุดว่าง
+    df.value = today; dt.value = today;
+    tf.value = isB ? '06:10' : '18:10';
+    tt.value = '';
+  }
+  otUpdatePreview();
 }
 
 // dropdown เลือกพนักงาน (สำหรับหัวหน้า/HR คีย์ให้ลูกทีม)
@@ -617,7 +662,8 @@ function exportOTReportCSV() {
 function initOTBindings() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
   // ฟอร์ม
-  on('ot-type', 'change', otUpdatePreview);
+  on('ot-type', 'change', otApplyTypeDefaults);
+  on('ot-emp', 'change', otApplyTypeDefaults);
   on('ot-date-from', 'change', otUpdatePreview);
   on('ot-time-from', 'change', otUpdatePreview);
   on('ot-date-to', 'change', otUpdatePreview);

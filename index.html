@@ -122,17 +122,17 @@ select.inp option{background:var(--sf2)}
 .dot.r{background:var(--er);animation:none}
 @keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
 
-.hist-table{width:100%;border-collapse:collapse;font-size:12px}
-.hist-table th{text-align:left;padding:7px 8px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--bd2)}
-.hist-table td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
+.hist-table{width:100%;border-collapse:collapse;font-size:14px}
+.hist-table th{text-align:left;padding:9px 8px;font-size:12px;font-weight:600;letter-spacing:0;color:var(--tx2);border-bottom:1px solid var(--bd2)}
+.hist-table td{padding:11px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .hist-table tr:last-child td{border-bottom:none}
-.hist-date{font-size:11px;color:var(--tx2);white-space:nowrap}
-.type-in{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(37,99,235,.12);color:var(--ac)}
-.type-out{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(220,38,38,.1);color:var(--er)}
-.status-ok{color:var(--ok);font-size:10px}
-.status-late{color:var(--wn);font-size:10px}
-.status-err{color:var(--er);font-size:10px}
-.hist-empty{text-align:center;padding:32px 0;color:var(--tx3);font-size:13px}
+.hist-date{font-size:13px;color:var(--tx2);white-space:nowrap}
+.type-in{display:inline-block;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(37,99,235,.12);color:var(--ac)}
+.type-out{display:inline-block;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(220,38,38,.1);color:var(--er)}
+.status-ok{color:var(--ok);font-size:12px}
+.status-late{color:var(--wn);font-size:12px}
+.status-err{color:var(--er);font-size:12px}
+.hist-empty{text-align:center;padding:32px 0;color:var(--tx3);font-size:14px}
 .range-btn{flex:1;padding:8px 0;border-radius:8px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;font-weight:500;font-family:var(--fn);cursor:pointer;transition:all .15s}
 .range-btn.active{background:var(--ac);border-color:var(--ac);color:#fff}
 
@@ -483,25 +483,25 @@ textarea.inp{resize:vertical;min-height:60px}
 <div class="page" id="page-history">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
-      <div style="font-size:16px;font-weight:600" id="hist-title">ประวัติการลงเวลา</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:2px" id="hist-range-label">ย้อนหลัง 60 วัน</div>
+      <div style="font-size:18px;font-weight:600" id="hist-title">ประวัติการลงเวลา</div>
+      <div style="font-size:13px;color:var(--tx3);margin-top:2px" id="hist-range-label">ย้อนหลัง 60 วัน</div>
     </div>
     <button class="btn o sm" id="btn-hist-reload">รีเฟรช</button>
   </div>
 
-  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px">ต้องการดูข้อมูลย้อนหลังมากกว่านี้ ติดต่อฝ่ายบุคคล</div>
+  <div style="font-size:13px;color:var(--tx3);margin-bottom:14px">ต้องการดูข้อมูลย้อนหลังมากกว่านี้ ติดต่อฝ่ายบุคคล</div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="hist-summary">
     <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
-      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">มาทำงาน</div>
+      <div style="font-size:12px;color:var(--tx3);letter-spacing:0;margin-bottom:4px">มาทำงาน</div>
       <div style="font-size:22px;font-weight:600;color:var(--ok)" id="h-days">—</div>
     </div>
     <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
-      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">มาสาย</div>
+      <div style="font-size:12px;color:var(--tx3);letter-spacing:0;margin-bottom:4px">มาสาย</div>
       <div style="font-size:22px;font-weight:600;color:var(--wn)" id="h-late">—</div>
     </div>
     <div class="card" style="padding:12px;text-align:center;margin-bottom:0">
-      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">รอแก้ไข</div>
+      <div style="font-size:12px;color:var(--tx3);letter-spacing:0;margin-bottom:4px">รอแก้ไข</div>
       <div style="font-size:22px;font-weight:600;color:var(--er)" id="h-noout">—</div>
     </div>
   </div>
@@ -3282,7 +3282,7 @@ function renderHistory(r) {
     else if (st === 'MANUAL') statusHtml = '<span class="status-late">✎ คีย์โดย HR</span>';
     else statusHtml = `<span class="status-err">✗ ${st}</span>`;
     const typeHtml = row.type === 'IN' ? '<span class="type-in">เข้า</span>' : '<span class="type-out">ออก</span>';
-    const durHtml = row.duration ? `<span style="font-size:11px;color:var(--ok)">${row.duration}</span>` : '—';
+    const durHtml = row.duration ? `<span style="font-size:13px;color:var(--ok)">${row.duration}</span>` : '—';
     const dim = row.complete === false ? 'opacity:.5' : '';
     html += `<tr style="${isNewDay?'border-top:2px solid var(--bd2);':''}${dim}"><td><div class="hist-date">${thDate}</div><div style="font-family:var(--mo);font-size:13px;color:var(--tx)">${timeShort}${crossNote}</div></td><td>${typeHtml}</td><td>${statusHtml}</td><td>${durHtml}</td></tr>`;
   });
