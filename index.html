@@ -1485,10 +1485,9 @@ const OFFICE = { lat: 13.449238475430999, lng: 101.03901280652984 };
     return v;
   })();
   startGPS();
-  // [ชั่วคราว] ปิด auto-login ไว้ก่อน จนกว่าจะทดสอบ kiosk + เมนูอื่นครบ แล้วค่อยเปิด
-  // (ป้องกันไม่ให้ตัวแปรใหม่มารบกวนช่วงที่ระบบเพิ่งนิ่ง)
-  // restoreSession();
-  go('welcome');
+  // กู้ session ที่ยังไม่หมดอายุ — refresh แล้วไม่ต้อง login ใหม่ (จำ 12 ชม.)
+  // ถ้ากู้สำเร็จ restoreSession จะพาไปหน้าที่เหมาะสมเอง ไม่ต้องไป welcome
+  if (!restoreSession()) go('welcome');
 })();
 
 // ── SESSION (จำ login ไว้ 12 ชม. ครอบ 1 กะงาน) ──────────────
@@ -1515,9 +1514,9 @@ function restoreSession() {
   try {
     sess = JSON.parse(localStorage.getItem('ws6_session') || 'null');
   } catch(e) { sess = null; }
-  if (!sess || !sess.empId) return;
+  if (!sess || !sess.empId) return false;
   // หมดอายุ → ล้างทิ้ง ให้ login ใหม่
-  if (Date.now() > sess.expire) { localStorage.removeItem('ws6_session'); return; }
+  if (Date.now() > sess.expire) { localStorage.removeItem('ws6_session'); return false; }
 
   // กู้ state แล้วเข้าหน้าที่เหมาะสม — แต่ต้อง refresh สถานะ session เช็คอินจาก server
   S.empId = sess.empId; S.name = sess.name; S.role = sess.role;
@@ -1531,7 +1530,7 @@ function restoreSession() {
   if (lbl) lbl.textContent = sess.name + ' · ' + sess.empId;
 
   // ถ้าปิดเมนูเช็คอิน → ไปหน้าเช็คเวลาตรงๆ ไม่ต้องเช็คสถานะเช็คอิน
-  if (!CHECKIN_ENABLED) { go(defaultLandingPage()); return; }
+  if (!CHECKIN_ENABLED) { go(defaultLandingPage()); return true; }
 
   // ทุก role (รวม HR) เช็คสถานะเช็คอินวันนี้จาก server ก่อนตัดสินหน้า
   gasRun('getTodayStatus', { employeeId: sess.empId })
@@ -1545,6 +1544,7 @@ function restoreSession() {
       }
     })
     .withFailureHandler(() => { go(defaultLandingPage()); });
+  return true;
 }
 
 function logout() {
