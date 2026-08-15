@@ -7,38 +7,38 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SOM HR System</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* ── ธีมสว่างนวล (Soft) — เทาอมฟ้า สบายตาในร่ม ── */
-  --bg:#eef1f6; --sf:#ffffff; --sf2:#f5f7fb; --sf3:#e8edf5;
-  --bd:#dde3ec; --bd2:#c4cdda;
-  --ac:#2563eb; --ac2:#4f46e5;
+  /* ── ธีมสว่างสะอาด (Clean) — ขาวนวล contrast คม อ่านง่าย ── */
+  --bg:#f8fafc; --sf:#ffffff; --sf2:#f1f5f9; --sf3:#e8edf5;
+  --bd:#e2e8f0; --bd2:#cbd5e1;
+  --ac:#2563eb; --ac2:#3b82f6;
   --ok:#059669; --wn:#d97706; --er:#dc2626;
-  --tx:#1e2733; --tx2:#5a6678; --tx3:#94a1b3;
+  --tx:#0f172a; --tx2:#475569; --tx3:#94a3b8;
   --fn:'IBM Plex Sans Thai',sans-serif; --mo:'IBM Plex Mono',monospace;
   --sab:env(safe-area-inset-bottom,0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fn)}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
 nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
 .logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
 .logo-icon{height:28px;min-width:28px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-size:13px;overflow:hidden}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-tabs{display:flex;gap:3px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:3px}
-.nav-tab{padding:4px 12px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--tx2);transition:all .15s;font-family:var(--fn)}
+.nav-tab{padding:6px 14px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--tx2);transition:all .15s;font-family:var(--fn)}
 .nav-tab.active{background:var(--ac);color:#fff}
 .nav-tab.co{background:var(--er);color:#fff}
 .nav-tab.ht{background:var(--sf2);color:var(--tx2)}
 .nav-tab.hr{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
 .nav-tab.hr.active{background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff}
-.hr-menu-card{display:flex;align-items:center;gap:12px;padding:16px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;cursor:pointer;transition:all .15s}
+.hr-menu-card{display:flex;align-items:center;gap:14px;padding:18px;background:var(--sf);border:1px solid var(--bd);border-radius:16px;cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .hr-menu-card:active{transform:scale(.98);background:var(--sf2)}
-.hr-menu-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.hr-menu-title{font-size:15px;font-weight:600;color:var(--tx)}
-.hr-menu-desc{font-size:11px;color:var(--tx3);margin-top:2px}
+.hr-menu-icon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.hr-menu-title{font-size:17px;font-weight:600;color:var(--tx)}
+.hr-menu-desc{font-size:13px;color:var(--tx3);margin-top:3px}
 .hr-menu-arrow{font-size:22px;color:var(--tx3);flex-shrink:0}
 .hd-row{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;margin-bottom:6px}
 .hd-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;flex-shrink:0}
@@ -74,11 +74,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(
 #page-kiosk.active{display:flex}
 .page.with-strip{top:88px}
 
-.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}
 .card.er::before{background:linear-gradient(90deg,transparent,rgba(239,68,68,.4),transparent)}
 .card.ok::before{background:linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)}
-.sec{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);margin-bottom:12px}
+.sec{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:14px}
 
 .steps-bar{display:flex;align-items:center;margin-bottom:24px}
 .sb-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
@@ -92,7 +92,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(
 .sb-step.done .sb-lbl{color:var(--ok)}
 
 .field{margin-bottom:13px}
-.field label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:7px}
+.field label{display:block;font-size:13px;font-weight:600;letter-spacing:0;color:var(--tx2);margin-bottom:7px}
 .inp{width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;color:var(--tx);font-size:15px;font-family:var(--fn);outline:none;transition:border-color .15s;-webkit-appearance:none}
 .inp:focus{border-color:var(--ac)}
 .inp.mono{font-family:var(--mo);letter-spacing:4px;text-align:center;font-size:22px}
@@ -211,8 +211,8 @@ select.inp option{background:var(--sf2)}
 @keyframes sp{to{transform:rotate(360deg)}}
 /* ── ระบบลา ── */
 .lbl{display:block;font-size:13px;font-weight:500;color:var(--tx2);margin-bottom:6px}
-.lv-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px}
-.lv-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.lv-card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.lv-badge{font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;white-space:nowrap}
 .lv-badge.lv-wait{background:rgba(234,159,39,.15);color:#c47d0a}
 .lv-badge.lv-ok{background:rgba(5,150,105,.15);color:var(--ok)}
 .lv-badge.lv-no{background:rgba(220,38,38,.12);color:var(--er)}
@@ -1329,7 +1329,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P
 const CHECKIN_ENABLED = false;
 
 // เวอร์ชันของโปรแกรม (แสดงบน UI เพื่อติดตามรุ่น)
-const APP_VERSION = '8.0.0';
+const APP_VERSION = '8.1.0';
 
 // ── โลโก้บริษัท ──────────────────────────────────────────────
 // ใส่ Google Drive File ID ของรูปโลโก้ (จากลิงก์ share: .../file/d/<FILE_ID>/view)
