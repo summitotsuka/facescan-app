@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>WorkScan</title>
+<title>SOM HR System</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -223,7 +223,7 @@ textarea.inp{resize:vertical;min-height:60px}
 <body>
 
 <nav>
-  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">Work Scan</span><span id="app-version" style="font-size:10px;color:var(--tx3);margin-left:6px"></span></div>
+  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">SOM HR System</span><span id="app-version" style="font-size:10px;color:var(--tx3);margin-left:6px"></span></div>
   <div class="nav-right">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
@@ -231,6 +231,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="nav-tab"        id="tab-out">เช็คเอาต์</button>
       <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
       <button class="nav-tab"        id="tab-leave">ลางาน</button>
+      <button class="nav-tab"        id="tab-ot">โอที</button>
       <button class="nav-tab"        id="tab-leave-appr" style="display:none">อนุมัติลา</button>
       <!-- ปุ่มไปหน้าจัดการงานบุคคล (แสดงเฉพาะ HR) -->
       <button class="nav-tab hr" id="nav-hr-work" style="display:none">งานบุคคล</button>
@@ -613,6 +614,24 @@ textarea.inp{resize:vertical;min-height:60px}
       <div style="flex:1">
         <div class="hr-menu-title">อัปโหลดเวลา</div>
         <div class="hr-menu-desc">นำเข้าไฟล์เวลาจากเครื่องสแกนนิ้ว</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-ot-approve">
+      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">⏱️</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อนุมัติ OT</div>
+        <div class="hr-menu-desc">อนุมัติคำขอทำงานล่วงเวลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-ot-report">
+      <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📈</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงาน OT</div>
+        <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบ OT</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -1103,6 +1122,99 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ═══════════════ OT: ฟอร์มขอ OT ═══════════════ -->
+<div class="page" id="page-ot-form">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="ot-form-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">ขอทำงานล่วงเวลา (OT)</h2>
+  </div>
+
+  <div class="card" style="padding:14px">
+    <div id="ot-emp-wrap" class="field" style="display:none">
+      <label>พนักงาน (เว้นว่าง = ตัวเอง)</label>
+      <select class="inp" id="ot-emp"><option value="">-- ตัวเอง --</option></select>
+    </div>
+    <div class="field"><label>ประเภท OT</label>
+      <select class="inp" id="ot-type"><option value="">เลือกประเภท</option></select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="field" style="flex:1"><label>วันที่เริ่ม</label><input class="inp" id="ot-date-from" type="date"></div>
+      <div class="field" style="flex:1"><label>เวลาเริ่ม</label><input class="inp" id="ot-time-from" type="time"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="field" style="flex:1"><label>วันที่สิ้นสุด</label><input class="inp" id="ot-date-to" type="date"></div>
+      <div class="field" style="flex:1"><label>เวลาสิ้นสุด</label><input class="inp" id="ot-time-to" type="time"></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx3);margin:-4px 0 8px">วันสิ้นสุดเว้นว่าง = วันเดียวกัน (ใส่เมื่อ OT ข้ามวัน เช่น กะ B วันหยุด)</div>
+    <div id="ot-preview" style="font-size:13px;margin-bottom:10px;color:var(--ac)"></div>
+    <div class="field"><label>รายละเอียดงานที่ทำ</label>
+      <textarea class="inp" id="ot-detail" rows="3" placeholder="อธิบายงานที่ทำ"></textarea>
+    </div>
+    <label class="btn o" style="display:block;text-align:center;cursor:pointer;margin-bottom:10px">
+      <span id="ot-file-label">แนบไฟล์ (ถ้ามี)</span>
+      <input type="file" id="ot-file" style="display:none">
+    </label>
+    <button class="btn p" id="ot-submit" style="width:100%">ส่งคำขอ</button>
+  </div>
+</div>
+
+<!-- ═══════════════ OT: ประวัติ ═══════════════ -->
+<div class="page" id="page-ot-history">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="ot-history-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">ประวัติ OT</h2>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button class="btn p" id="ot-goto-form" style="flex:1">+ ขอ OT</button>
+    <button class="btn o" id="ot-goto-approve" style="flex:1;display:none">อนุมัติ OT</button>
+  </div>
+  <div id="ot-history-list"></div>
+</div>
+
+<!-- ═══════════════ OT: อนุมัติ ═══════════════ -->
+<div class="page" id="page-ot-approve">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="ot-approve-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">อนุมัติ OT</h2>
+  </div>
+  <div id="ot-approve-list"></div>
+</div>
+
+<!-- ═══════════════ OT: รายงาน ═══════════════ -->
+<div class="page" id="page-ot-report">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="otr-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px">รายงาน OT</h2>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="lbl">พนักงาน</label>
+        <select id="otr-f-emp" class="inp"><option value="">ทุกคน</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="lbl">ประเภท</label>
+        <select id="otr-f-type" class="inp"><option value="">ทุกประเภท</option></select></div>
+      <div style="flex:1"><label class="lbl">สถานะ</label>
+        <select id="otr-f-status" class="inp">
+          <option value="">ทั้งหมด</option>
+          <option value="PENDING_L1">รออนุมัติ (หัวหน้า)</option>
+          <option value="PENDING_L2">รออนุมัติ (ผู้จัดการ)</option>
+          <option value="PENDING_HR">รออนุมัติ (บุคคล)</option>
+          <option value="APPROVED">อนุมัติแล้ว</option>
+          <option value="REJECTED">ไม่อนุมัติ</option>
+          <option value="CANCELLED">ยกเลิกแล้ว</option>
+          <option value="VOIDED">ถูกยกเลิก</option>
+        </select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="lbl">ตั้งแต่</label><input id="otr-f-from" type="date" class="inp"></div>
+      <div style="flex:1"><label class="lbl">ถึง</label><input id="otr-f-to" type="date" class="inp"></div>
+    </div>
+    <button class="btn p" id="otr-search" style="width:100%">ค้นหา</button>
+  </div>
+  <div id="otr-result"></div>
+</div>
+
 <!-- ═══════════════ อัปโหลดเวลาจากเครื่องสแกนนิ้ว ═══════════════ -->
 <div class="page" id="page-finger">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1215,7 +1327,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzuvXxNdLc18QdRL8NdKM1P
 const CHECKIN_ENABLED = false;
 
 // เวอร์ชันของโปรแกรม (แสดงบน UI เพื่อติดตามรุ่น)
-const APP_VERSION = '7.1.0';
+const APP_VERSION = '8.0.0';
 
 // ── โลโก้บริษัท ──────────────────────────────────────────────
 // ใส่ Google Drive File ID ของรูปโลโก้ (จากลิงก์ share: .../file/d/<FILE_ID>/view)
@@ -1555,7 +1667,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1596,6 +1708,10 @@ function go(id) {
   if (id === 'leave-approve') { if (typeof loadLeaveApprovals === 'function') loadLeaveApprovals(); }
   if (id === 'leave-report')  { if (typeof loadLeaveReport === 'function') loadLeaveReport(); }
   if (id === 'finger')        { resetFingerPage(); }
+  if (id === 'ot-form')       { if (typeof loadOTForm === 'function') loadOTForm(); }
+  if (id === 'ot-history')    { if (typeof loadOTHistory === 'function') loadOTHistory(); }
+  if (id === 'ot-approve')    { if (typeof loadOTApprovals === 'function') loadOTApprovals(); }
+  if (id === 'ot-report')     { if (typeof loadOTReport === 'function') loadOTReport(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
@@ -1614,7 +1730,7 @@ function tab(id, el) { go(id); }
 function applyRoleMenus(role) {
   const isHR = role === 'HR';
   // เมนูพนักงาน — เช็คอิน/เอาต์ ขึ้นกับสวิตช์ CHECKIN_ENABLED, เช็คเวลา/ลางาน แสดงเสมอ
-  const alwaysTabs = ['tab-hist', 'tab-leave'];
+  const alwaysTabs = ['tab-hist', 'tab-leave', 'tab-ot'];
   alwaysTabs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = '';
@@ -3561,9 +3677,11 @@ applyLogo();
 })();
 </script>
 <script src="leave.js"></script>
+<script src="ot.js"></script>
 <script>
   // ผูก event ระบบลา หลัง leave.js โหลดเสร็จ
   if (typeof initLeaveBindings === 'function') initLeaveBindings();
+  if (typeof initOTBindings === 'function') initOTBindings();
   // แสดงเวอร์ชันบน UI
   (function(){ const v = document.getElementById('app-version'); if (v) v.textContent = 'v' + APP_VERSION; })();
 </script>

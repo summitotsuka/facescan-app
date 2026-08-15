@@ -693,11 +693,11 @@ function lvRenderReport(rows) {
   box.querySelectorAll('.lvr-void-btn').forEach(b => b.addEventListener('click', () => openVoidDialog(b.getAttribute('data-id'))));
 }
 
-// ย่อ datetime "yyyy-MM-dd HH:mm:ss" → "dd/mm HH:mm"
+// ย่อ datetime "yyyy-MM-dd HH:mm:ss" → "dd/MM/yyyy HH:mm"
 function lvShortDT(s) {
   if (!s) return '';
   const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
-  if (m) return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`;
+  if (m) return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`;
   return String(s);
 }
 
