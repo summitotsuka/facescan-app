@@ -98,7 +98,8 @@ function otFillEmpDropdown() {
   // พนักงานทั่วไป (ไม่ใช่ผู้อนุมัติ/HR) → ซ่อน คีย์ให้ตัวเองเท่านั้น
   if (!OT.isApprover && !OT.isHR) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  sel.innerHTML = '<option value="">-- ตัวเอง --</option>' +
+  const selfName = S.name ? `${S.name} (ตัวเอง)` : 'ตัวเอง';
+  sel.innerHTML = `<option value="">${otEsc(selfName)}</option>` +
     OT.team.filter(m => m.id.toUpperCase() !== S.empId.toUpperCase())
       .map(m => `<option value="${otEsc(m.id)}">${otEsc(m.name)} (${otEsc(m.id)})</option>`).join('');
 }
@@ -135,6 +136,7 @@ function submitOT() {
 
   if (!otType) { showToast('เลือกประเภท OT'); return; }
   if (!dateFrom || !timeFrom || !timeTo) { showToast('กรอกวันและเวลาให้ครบ'); return; }
+  if (!detail) { showToast('กรุณากรอกรายละเอียดงานที่ทำ'); return; }
 
   const btn = document.getElementById('ot-submit');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังส่ง...'; }
@@ -307,9 +309,10 @@ function renderOTApprovals() {
   if (!OT.pending.length) { box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ไม่มีคำขอรออนุมัติ</div>'; return; }
 
   box.innerHTML = OT.pending.map(r => {
-    const attLine = r.attOut
-      ? `<div style="font-size:12px;margin-top:6px;color:var(--tx2)">เวลาออกงาน: ${otEsc(r.attOut)}</div>`
-      : '';
+    const hasAtt = r.attIn || r.attOut;
+    const attLine = `<div style="font-size:12px;margin-top:6px;color:${hasAtt ? '#c47d0a' : 'var(--tx3)'}">
+      เวลาเข้า/ออก (${hasAtt ? otEsc((r.attIn || '—') + ' - ' + (r.attOut || '—')) : 'ไม่มี'})${hasAtt ? ' ⚠️' : ''}
+    </div>`;
     return `<div class="lv-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
@@ -321,7 +324,8 @@ function renderOTApprovals() {
       ${r.detail ? `<div style="font-size:13px;margin-top:6px;padding:8px;background:var(--sf2);border-radius:6px">${otEsc(r.detail)}</div>` : ''}
       ${r.fileUrl ? `<a href="${otEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
       ${attLine}
-      <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="ot-check" data-id="${otEsc(r.requestId)}"> เลือก</label>
         <button class="btn sm ot-approve-btn" data-id="${otEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;background:var(--ok)">อนุมัติ</button>
         <button class="btn o sm ot-reject-btn" data-id="${otEsc(r.requestId)}" style="width:auto;padding:5px 16px;font-size:13px;color:var(--er);border-color:var(--er)">ไม่อนุมัติ</button>
         <button class="btn o sm ot-apcancel-btn" data-id="${otEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:13px;color:var(--tx2)">ยกเลิกให้</button>
@@ -329,9 +333,22 @@ function renderOTApprovals() {
     </div>`;
   }).join('');
 
+  // แถบเลือกหลายรายการ
+  const bar = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;padding:10px;background:var(--sf2);border-radius:8px">
+    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" id="ot-check-all"> เลือกทั้งหมด</label>
+    <button class="btn sm" id="ot-approve-selected" style="width:auto;padding:5px 16px;font-size:13px;background:var(--ok)">อนุมัติที่เลือก</button>
+  </div>`;
+  box.innerHTML = bar + box.innerHTML;
+
   box.querySelectorAll('.ot-approve-btn').forEach(b => b.addEventListener('click', () => otApproveRequest(b.getAttribute('data-id'))));
   box.querySelectorAll('.ot-reject-btn').forEach(b => b.addEventListener('click', () => otRejectRequest(b.getAttribute('data-id'))));
   box.querySelectorAll('.ot-apcancel-btn').forEach(b => b.addEventListener('click', () => otCancelByApproverAction(b.getAttribute('data-id'))));
+  const chkAll = document.getElementById('ot-check-all');
+  if (chkAll) chkAll.addEventListener('change', () => {
+    box.querySelectorAll('.ot-check').forEach(c => { c.checked = chkAll.checked; });
+  });
+  const apprSel = document.getElementById('ot-approve-selected');
+  if (apprSel) apprSel.addEventListener('click', otApproveSelected);
 }
 
 function otApproveRequest(reqId) {
@@ -345,9 +362,29 @@ function otApproveRequest(reqId) {
     .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
 }
 
+// อนุมัติหลายรายการที่เลือก (ทีละอันต่อเนื่อง)
+function otApproveSelected() {
+  const ids = Array.from(document.querySelectorAll('.ot-check:checked')).map(c => c.getAttribute('data-id'));
+  if (!ids.length) { showToast('ยังไม่ได้เลือกรายการ'); return; }
+  if (!confirm('อนุมัติ ' + ids.length + ' รายการที่เลือก?')) return;
+  let done = 0, ok = 0;
+  const next = () => {
+    if (done >= ids.length) {
+      showToast('อนุมัติสำเร็จ ' + ok + '/' + ids.length + ' รายการ', true);
+      loadOTApprovals();
+      return;
+    }
+    gasRun('otApprove', { hrToken: S.hrToken, requestId: ids[done] })
+      .withSuccessHandler(r => { if (r && r.success) ok++; done++; next(); })
+      .withFailureHandler(() => { done++; next(); });
+  };
+  next();
+}
+
 function otRejectRequest(reqId) {
-  const reason = prompt('เหตุผลที่ไม่อนุมัติ:', '');
+  const reason = prompt('เหตุผลที่ไม่อนุมัติ (จำเป็น):', '');
   if (reason === null) return;
+  if (!reason.trim()) { showToast('กรุณากรอกเหตุผล'); return; }
   gasRun('otReject', { hrToken: S.hrToken, requestId: reqId, rejectReason: reason.trim() })
     .withSuccessHandler(r => {
       if (!r || !r.success) { showToast((r && r.message) || 'ไม่สำเร็จ'); return; }
@@ -358,8 +395,9 @@ function otRejectRequest(reqId) {
 }
 
 function otCancelByApproverAction(reqId) {
-  const reason = prompt('ยกเลิกใบ OT ให้พนักงาน\nระบุเหตุผล:', 'พนักงานขอยกเลิก');
+  const reason = prompt('ยกเลิกใบ OT ให้พนักงาน\nระบุเหตุผล (จำเป็น):', '');
   if (reason === null) return;
+  if (!reason.trim()) { showToast('กรุณากรอกเหตุผล'); return; }
   gasRun('otCancelByApprover', { hrToken: S.hrToken, requestId: reqId, cancelReason: reason.trim() })
     .withSuccessHandler(r => {
       if (!r || !r.success) { showToast((r && r.message) || 'ยกเลิกไม่สำเร็จ'); return; }
@@ -437,9 +475,12 @@ function renderOTReport(rows) {
   if (!rows.length) { box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ไม่พบข้อมูล</div>'; return; }
 
   const totalHours = rows.filter(r => r.status === 'APPROVED').reduce((s, r) => s + (Number(r.hours) || 0), 0);
-  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
     <div style="font-size:13px;color:var(--tx2)">พบ ${rows.length} รายการ · อนุมัติแล้วรวม <b>${totalHours}</b> ชม.</div>
-    <button class="btn o sm" id="otr-export" style="width:auto;padding:5px 14px;font-size:12px">Export CSV</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn o sm" id="otr-pdf" style="width:auto;padding:5px 14px;font-size:12px">พิมพ์ PDF</button>
+      <button class="btn o sm" id="otr-export" style="width:auto;padding:5px 14px;font-size:12px">Export CSV</button>
+    </div>
   </div>`;
 
   html += rows.map(r => {
@@ -470,7 +511,70 @@ function renderOTReport(rows) {
 
   box.innerHTML = html;
   const exp = document.getElementById('otr-export'); if (exp) exp.addEventListener('click', exportOTReportCSV);
+  const pdf = document.getElementById('otr-pdf'); if (pdf) pdf.addEventListener('click', printOTReportPDF);
   box.querySelectorAll('.otr-void-btn').forEach(b => b.addEventListener('click', () => otVoidRequest(b.getAttribute('data-id'))));
+}
+
+// พิมพ์รายงาน OT เป็น PDF (เปิดหน้าต่างพิมพ์ → ผู้ใช้ Save as PDF)
+// คอลัมน์ตามที่ฝ่ายบุคคลระบุ สำหรับพนักงานเซ็นตอนเลิกงาน
+function printOTReportPDF() {
+  if (!OT.report.length) { showToast('ไม่มีข้อมูล'); return; }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const rows = OT.report;
+
+  let body = '';
+  rows.forEach((r, idx) => {
+    const st = (OT_STATUS[r.status] || { text: r.status }).text;
+    body += `<tr>
+      <td>${idx + 1}</td>
+      <td>${esc(r.requestId)}</td>
+      <td>${esc(r.empId)}</td>
+      <td>${esc(r.empName)}</td>
+      <td>${esc(r.otTypeName)}</td>
+      <td>${esc(r.detail)}</td>
+      <td>${esc(otFmtDate(r.dateFrom))}</td>
+      <td>${esc(otFmtDate(r.dateTo))}</td>
+      <td>${esc(r.timeFrom)}-${esc(r.timeTo)}</td>
+      <td style="text-align:center">${esc(r.hours)}</td>
+      <td>${esc(r.attOut || '')}</td>
+      <td>${esc(st)}</td>
+      <td>${esc(r.l1By || '')}</td>
+      <td>${esc(r.l2By || '')}</td>
+      <td>${esc(r.hrBy || '')}</td>
+      <td style="min-width:60px"></td>
+    </tr>`;
+  });
+
+  const totalHours = rows.filter(r => r.status === 'APPROVED').reduce((s, r) => s + (Number(r.hours) || 0), 0);
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+    <title>รายงานการขอ OT</title>
+    <style>
+      body{font-family:'Sarabun','TH Sarabun New',sans-serif;padding:16px;font-size:12px;color:#000}
+      h2{text-align:center;margin:0 0 4px}
+      .sub{text-align:center;font-size:12px;color:#555;margin-bottom:12px}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #333;padding:4px 6px;font-size:11px;vertical-align:top}
+      th{background:#eee;text-align:center}
+      .foot{margin-top:8px;font-size:12px;font-weight:bold;text-align:right}
+      @media print{ .noprint{display:none} }
+    </style></head><body>
+    <h2>รายงานการขอทำงานล่วงเวลา (OT)</h2>
+    <div class="sub">SOM HR System — พิมพ์วันที่ ${otFmtDate(new Date().toISOString().slice(0,10))}</div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>เลขที่</th><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>รายละเอียดงาน</th>
+        <th>เริ่ม</th><th>ถึง</th><th>เวลา</th><th>ชม.OT</th><th>เวลาออกงาน</th><th>สถานะ</th>
+        <th>หัวหน้า</th><th>ผู้จัดการ</th><th>บุคคล</th><th>ลายเซ็น</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="foot">รวมชั่วโมง OT ที่อนุมัติแล้ว: ${totalHours} ชม.</div>
+    <div class="noprint" style="text-align:center;margin-top:16px">
+      <button onclick="window.print()" style="padding:8px 24px;font-size:14px;cursor:pointer">พิมพ์ / บันทึกเป็น PDF</button>
+    </div>
+  </body></html>`);
+  win.document.close();
 }
 
 function otVoidRequest(reqId) {
@@ -534,6 +638,7 @@ function initOTBindings() {
   on('ot-history-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'history'));
   // อนุมัติ
   on('ot-approve-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'ot-history'));
+  on('ot-approve-refresh', 'click', loadOTApprovals);
   // รายงาน
   on('otr-search', 'click', runOTReport);
   on('otr-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'history'));

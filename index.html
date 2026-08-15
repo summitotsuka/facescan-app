@@ -1105,7 +1105,8 @@ textarea.inp{resize:vertical;min-height:60px}
 <div class="page" id="page-leave-approve">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <button class="btn o sm" id="lv-approve-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
-    <h2 style="margin:0;font-size:18px">คำขอลารออนุมัติ</h2>
+    <h2 style="margin:0;font-size:18px;flex:1">คำขอลารออนุมัติ</h2>
+    <button class="btn o sm" id="lv-approve-refresh" style="width:auto;padding:6px 12px">↻ รีเฟรช</button>
   </div>
   <div id="lv-approval-list"></div>
 </div>
@@ -1131,8 +1132,8 @@ textarea.inp{resize:vertical;min-height:60px}
 
   <div class="card" style="padding:14px">
     <div id="ot-emp-wrap" class="field" style="display:none">
-      <label>พนักงาน (เว้นว่าง = ตัวเอง)</label>
-      <select class="inp" id="ot-emp"><option value="">-- ตัวเอง --</option></select>
+      <label>พนักงาน</label>
+      <select class="inp" id="ot-emp"><option value="">ตัวเอง</option></select>
     </div>
     <div class="field"><label>ประเภท OT</label>
       <select class="inp" id="ot-type"><option value="">เลือกประเภท</option></select>
@@ -1175,7 +1176,8 @@ textarea.inp{resize:vertical;min-height:60px}
 <div class="page" id="page-ot-approve">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <button class="btn o sm" id="ot-approve-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
-    <h2 style="margin:0;font-size:18px">อนุมัติ OT</h2>
+    <h2 style="margin:0;font-size:18px;flex:1">อนุมัติ OT</h2>
+    <button class="btn o sm" id="ot-approve-refresh" style="width:auto;padding:6px 12px">↻ รีเฟรช</button>
   </div>
   <div id="ot-approve-list"></div>
 </div>

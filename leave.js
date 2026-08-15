@@ -524,8 +524,9 @@ function approveLeave(reqId) {
 // ── ผู้อนุมัติยกเลิกใบลาให้พนักงาน (กรณีพนักงานขอยกเลิกแต่เลยขั้นแรกมาแล้ว) ──
 function cancelByApprover(reqId) {
   if (!reqId) return;
-  const reason = prompt('ยกเลิกใบลาให้พนักงาน\nระบุเหตุผล (เช่น พนักงานขอยกเลิก):', 'พนักงานขอยกเลิก');
+  const reason = prompt('ยกเลิกใบลาให้พนักงาน\nระบุเหตุผล (จำเป็น):', '');
   if (reason === null) return;   // กด cancel
+  if (!reason.trim()) { showToast('กรุณากรอกเหตุผล'); return; }
   gasRun('leaveCancelByApprover', { hrToken: S.hrToken, requestId: reqId, cancelReason: reason.trim() })
     .withSuccessHandler(r => {
       if (!r || !r.success) { showToast((r && r.message) || 'ยกเลิกไม่สำเร็จ'); return; }
@@ -796,4 +797,5 @@ function initLeaveBindings() {
   on('lv-form-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'history'));
   on('lv-history-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'history'));
   on('lv-approve-back', 'click', () => go(S.role === 'HR' ? 'hr-dash' : 'history'));
+  on('lv-approve-refresh', 'click', () => { if (typeof loadLeaveApprovals === 'function') loadLeaveApprovals(); });
 }
