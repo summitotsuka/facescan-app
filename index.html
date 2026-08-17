@@ -635,6 +635,15 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
+
+    <div class="hr-menu-card" id="hr-menu-payroll">
+      <div class="hr-menu-icon" style="background:rgba(16,185,129,.12);color:var(--ok)">💰</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">สลิปเงินเดือน</div>
+        <div class="hr-menu-desc">จัดการงวด นำเข้าข้อมูล ตรวจสอบ</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
   </div>
 </div>
 
@@ -1217,6 +1226,80 @@ textarea.inp{resize:vertical;min-height:60px}
   <div id="otr-result"></div>
 </div>
 
+<!-- ═══════════════ สลิปเงินเดือน: จัดการงวด ═══════════════ -->
+<div class="page" id="page-pay-periods">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="pay-periods-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px;flex:1">สลิปเงินเดือน — จัดการงวด</h2>
+    <button class="btn o sm" id="pay-periods-refresh" style="width:auto;padding:6px 12px">↻</button>
+  </div>
+
+  <button class="btn p" id="pay-create-btn" style="width:100%;margin-bottom:16px">+ สร้างงวดใหม่</button>
+
+  <!-- ฟอร์มสร้างงวด (ซ่อนไว้) -->
+  <div class="card" id="pay-create-form" style="display:none;margin-bottom:16px">
+    <div style="font-weight:600;margin-bottom:12px">สร้างงวดจ่ายใหม่</div>
+    <div class="field"><label>รอบการจ่าย (ให้ตรงกับคอลัมน์ A ในไฟล์ เช่น JULY02)</label>
+      <input class="inp" id="pay-f-round" placeholder="เช่น JULY02"></div>
+    <div class="field"><label>วันที่จ่าย</label>
+      <input class="inp" id="pay-f-date" type="date"></div>
+    <div class="field"><label>ประเภทงวด</label>
+      <select class="inp" id="pay-f-type">
+        <option value="NORMAL">ปกติ</option>
+        <option value="BONUS">โบนัส</option>
+      </select></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn p" id="pay-create-save" style="flex:1">สร้างงวด</button>
+      <button class="btn o" id="pay-create-cancel" style="flex:1">ยกเลิก</button>
+    </div>
+  </div>
+
+  <div id="pay-periods-list"></div>
+</div>
+
+<!-- ═══════════════ สลิปเงินเดือน: ตรวจสอบข้อมูล ═══════════════ -->
+<div class="page" id="page-pay-review">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="pay-review-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
+    <h2 style="margin:0;font-size:18px;flex:1" id="pay-review-title">ตรวจสอบข้อมูล</h2>
+  </div>
+
+  <!-- แถบเครื่องมืองวด -->
+  <div class="card" id="pay-review-toolbar" style="margin-bottom:14px">
+    <div id="pay-review-periodinfo" style="font-size:14px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label class="btn o sm" style="width:auto;padding:8px 16px;cursor:pointer">
+        <span id="pay-upload-label">📁 โหลดไฟล์ Excel</span>
+        <input type="file" id="pay-upload-file" accept=".xlsx,.xls" style="display:none">
+      </label>
+      <button class="btn o sm" id="pay-lock-btn" style="width:auto;padding:8px 16px">🔒 ปิดงวด</button>
+    </div>
+    <div id="pay-upload-status" style="font-size:13px;margin-top:8px;color:var(--tx3)"></div>
+  </div>
+
+  <!-- สรุปผลโหลด -->
+  <div id="pay-load-result"></div>
+
+  <!-- ตาราง -->
+  <div id="pay-review-table"></div>
+</div>
+
+<!-- ═══════════════ สลิปเงินเดือน: dialog แก้ไขรายคน ═══════════════ -->
+<div class="overlay" id="pay-edit-overlay" style="display:none">
+  <div class="res-card" style="text-align:left;max-width:560px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-weight:600;font-size:16px" id="pay-edit-title">แก้ไขข้อมูล</div>
+      <button id="pay-edit-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--tx3)">×</button>
+    </div>
+    <div id="pay-edit-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn p" id="pay-edit-save" style="flex:1">บันทึก + คำนวณสะสมใหม่</button>
+      <button class="btn o" id="pay-edit-cancel" style="flex:1">ยกเลิก</button>
+    </div>
+    <button class="btn o" id="pay-edit-delete" style="width:100%;margin-top:8px;color:var(--er);border-color:var(--er)">ลบพนักงานคนนี้ออกจากงวด</button>
+  </div>
+</div>
+
 <!-- ═══════════════ อัปโหลดเวลาจากเครื่องสแกนนิ้ว ═══════════════ -->
 <div class="page" id="page-finger">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1669,7 +1752,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1714,6 +1797,8 @@ function go(id) {
   if (id === 'ot-history')    { if (typeof loadOTHistory === 'function') loadOTHistory(); }
   if (id === 'ot-approve')    { if (typeof loadOTApprovals === 'function') loadOTApprovals(); }
   if (id === 'ot-report')     { if (typeof loadOTReport === 'function') loadOTReport(); }
+  if (id === 'pay-periods')   { if (typeof loadPayPeriods === 'function') loadPayPeriods(); }
+  if (id === 'pay-review')    { if (typeof loadPayReview === 'function') loadPayReview(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
@@ -3680,10 +3765,12 @@ applyLogo();
 </script>
 <script src="leave.js"></script>
 <script src="ot.js"></script>
+<script src="payroll.js"></script>
 <script>
   // ผูก event ระบบลา หลัง leave.js โหลดเสร็จ
   if (typeof initLeaveBindings === 'function') initLeaveBindings();
   if (typeof initOTBindings === 'function') initOTBindings();
+  if (typeof initPayrollBindings === 'function') initPayrollBindings();
   // แสดงเวอร์ชันบน UI
   (function(){ const v = document.getElementById('app-version'); if (v) v.textContent = 'v' + APP_VERSION; })();
 </script>
