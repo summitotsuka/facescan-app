@@ -1272,9 +1272,17 @@ textarea.inp{resize:vertical;min-height:60px}
         <span id="pay-upload-label">📁 โหลดไฟล์ Excel</span>
         <input type="file" id="pay-upload-file" accept=".xlsx,.xls" style="display:none">
       </label>
+      <button class="btn o sm" id="pay-genpdf-btn" style="width:auto;padding:8px 16px">📄 สร้าง PDF ทั้งงวด</button>
+      <button class="btn o sm" id="pay-genpdf-sel-btn" style="width:auto;padding:8px 16px;display:none">📄 สร้าง PDF ที่เลือก (<span id="pay-sel-count">0</span>)</button>
       <button class="btn o sm" id="pay-lock-btn" style="width:auto;padding:8px 16px">🔒 ปิดงวด</button>
     </div>
     <div id="pay-upload-status" style="font-size:13px;margin-top:8px;color:var(--tx3)"></div>
+    <div id="pay-pdf-progress" style="display:none;margin-top:10px">
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:6px" id="pay-pdf-progress-text">กำลังสร้าง PDF...</div>
+      <div style="height:8px;background:var(--sf2);border-radius:4px;overflow:hidden">
+        <div id="pay-pdf-progress-bar" style="height:100%;width:0%;background:var(--ok);transition:width .3s"></div>
+      </div>
+    </div>
   </div>
 
   <!-- สรุปผลโหลด -->

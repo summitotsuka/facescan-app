@@ -245,6 +245,7 @@ function renderPayTable() {
     <div style="padding:14px 16px;border-bottom:1px solid var(--bd);font-weight:600">พนักงาน ${PAY.rows.length} คน</div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead><tr>
+        <th style="text-align:center;padding:10px 8px;background:var(--sf2)"><input type="checkbox" id="pay-check-all" style="cursor:pointer"></th>
         <th style="text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:var(--tx2);background:var(--sf2)">#</th>
         <th style="text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:var(--tx2);background:var(--sf2)">รหัส</th>
         <th style="text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:var(--tx2);background:var(--sf2)">ชื่อ</th>
@@ -259,14 +260,16 @@ function renderPayTable() {
   html += PAY.rows.map((row, i) => {
     const warn = row.checkFlag === '⚠️';
     const rowBg = warn ? 'background:rgba(217,119,6,.05)' : '';
+    const pdfLink = row.urlPDF ? `<a href="${payEsc(row.urlPDF)}" target="_blank" style="color:var(--ok);font-size:13px;text-decoration:none">📄 เปิด</a>` : '';
     return `<tr style="${rowBg}">
+      <td style="padding:11px 8px;border-top:1px solid var(--bd);text-align:center"><input type="checkbox" class="pay-row-check" data-id="${payEsc(row.rowId)}" style="cursor:pointer"></td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd)">${i + 1}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd)">${payEsc(row.empId)}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);white-space:nowrap">${payEsc(row.name)}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums">${payMoney(row.income)}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums">${payMoney(row.deduct)}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${payMoney(row.net)}</td>
-      <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:center">${slipBadge(row.statusSlip)}</td>
+      <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:center">${slipBadge(row.statusSlip)} ${pdfLink}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:center;font-size:16px">${warn ? '⚠️' : '<span style="color:var(--ok)">✓</span>'}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);white-space:nowrap">
         ${isOpen ? `<span class="pay-edit-link" data-id="${payEsc(row.rowId)}" style="color:var(--ac);cursor:pointer;font-weight:600;font-size:13px">แก้ไข</span>` : ''}
@@ -276,11 +279,29 @@ function renderPayTable() {
 
   html += `</tbody></table></div>
     <div style="font-size:12px;color:var(--tx3);padding:12px 16px;border-top:1px solid var(--bd)">
-      แถวสีส้ม = ยอดรวมไม่ตรง (⚠️) คลิก "แก้ไข" เพื่อตรวจสอบ ${isOpen ? '' : '· งวดนี้ปิดแล้ว แก้ไขไม่ได้'}
+      แถวสีส้ม = ยอดรวมไม่ตรง (⚠️) คลิก "แก้ไข" เพื่อตรวจสอบ · เลือกเช็คบ็อกซ์เพื่อสร้าง PDF เฉพาะคน ${isOpen ? '' : '· งวดนี้ปิดแล้ว แก้ไขไม่ได้'}
     </div></div>`;
 
   box.innerHTML = html;
   box.querySelectorAll('.pay-edit-link').forEach(el => el.addEventListener('click', () => openPayEdit(el.getAttribute('data-id'))));
+  // เช็คบ็อกซ์
+  const checkAll = document.getElementById('pay-check-all');
+  if (checkAll) checkAll.addEventListener('change', () => {
+    box.querySelectorAll('.pay-row-check').forEach(c => { c.checked = checkAll.checked; });
+    payUpdateSelCount();
+  });
+  box.querySelectorAll('.pay-row-check').forEach(c => c.addEventListener('change', payUpdateSelCount));
+  payUpdateSelCount();
+}
+
+// นับจำนวนที่เลือก + toggle ปุ่มสร้าง PDF ที่เลือก
+function payUpdateSelCount() {
+  const checks = document.querySelectorAll('.pay-row-check:checked');
+  const count = checks.length;
+  const el = document.getElementById('pay-sel-count');
+  if (el) el.textContent = count;
+  const selBtn = document.getElementById('pay-genpdf-sel-btn');
+  if (selBtn) selBtn.style.display = count > 0 ? '' : 'none';
 }
 
 // ════════ ฟอร์มแก้ไขรายคน (accordion แบ่งกลุ่ม) ════════
@@ -395,6 +416,60 @@ function deletePayRow() {
     .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
 }
 
+// ════════ สร้าง PDF (batch วนจนเสร็จ) ════════
+function payGenPDF(rowIds) {
+  const p = PAY.currentPeriod;
+  if (!p) return;
+  const force = !!(rowIds && rowIds.length);   // เลือกเฉพาะคน = force สร้างใหม่ทับ
+  const progress = document.getElementById('pay-pdf-progress');
+  const bar = document.getElementById('pay-pdf-progress-bar');
+  const txt = document.getElementById('pay-pdf-progress-text');
+  if (progress) progress.style.display = 'block';
+  if (bar) bar.style.width = '0%';
+
+  // ปิดปุ่มกันกดซ้ำ
+  const btns = ['pay-genpdf-btn', 'pay-genpdf-sel-btn'];
+  btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
+
+  let totalDone = 0, totalAll = 0;
+  const runBatch = () => {
+    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds || null, force: force })
+      .withSuccessHandler(r => {
+        if (!r || !r.success) {
+          if (txt) txt.textContent = '✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ');
+          btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+          return;
+        }
+        // รอบแรก set total
+        if (totalAll === 0) totalAll = r.total;
+        totalDone += r.generated;
+        const pct = totalAll ? Math.round((totalDone / totalAll) * 100) : 100;
+        if (bar) bar.style.width = pct + '%';
+        if (txt) txt.textContent = `กำลังสร้าง PDF... ${totalDone}/${totalAll}`;
+
+        if (!r.done && r.remaining > 0) {
+          runBatch();   // วนต่อ
+        } else {
+          if (txt) txt.textContent = `✓ สร้าง PDF เสร็จ ${totalDone} ใบ`;
+          btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+          loadPayTable();
+          setTimeout(() => { if (progress) progress.style.display = 'none'; }, 2500);
+        }
+      })
+      .withFailureHandler(() => {
+        if (txt) txt.textContent = '✗ เกิดข้อผิดพลาด';
+        btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+      });
+  };
+  runBatch();
+}
+
+function payGenPDFSelected() {
+  const ids = Array.from(document.querySelectorAll('.pay-row-check:checked')).map(c => c.getAttribute('data-id'));
+  if (!ids.length) { showToast('เลือกพนักงานก่อน'); return; }
+  payGenPDF(ids);
+}
+
 // ════════ ผูก event ════════
 function initPayrollBindings() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
@@ -411,6 +486,8 @@ function initPayrollBindings() {
   on('pay-create-cancel', 'click', () => { document.getElementById('pay-create-form').style.display = 'none'; });
   // หน้าตรวจสอบ
   on('pay-review-back', 'click', () => go('pay-periods'));
+  on('pay-genpdf-btn', 'click', () => payGenPDF(null));
+  on('pay-genpdf-sel-btn', 'click', payGenPDFSelected);
   on('pay-upload-file', 'change', function(e) {
     const f = e.target.files && e.target.files[0];
     if (f) payHandleUpload(f);
