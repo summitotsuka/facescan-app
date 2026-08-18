@@ -422,73 +422,86 @@ function deletePayRow() {
     .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
 }
 
-// ════════ สร้าง PDF (batch วนจนเสร็จ) ════════
+// ════════ สร้าง PDF ════════
+// 2 โหมด: ทั้งงวด (backend หยิบ batch เอง วนจนหมด) / เลือกเฉพาะคน (frontend แบ่ง batch เอง)
 function payGenPDF(rowIds) {
   const p = PAY.currentPeriod;
   if (!p) return;
-  const force = !!(rowIds && rowIds.length);   // เลือกเฉพาะคน = force สร้างใหม่ทับ
   const progress = document.getElementById('pay-pdf-progress');
   const bar = document.getElementById('pay-pdf-progress-bar');
   const txt = document.getElementById('pay-pdf-progress-text');
   if (progress) progress.style.display = 'block';
   if (bar) bar.style.width = '0%';
 
-  // ปิดปุ่มกันกดซ้ำ
   const btns = ['pay-genpdf-btn', 'pay-genpdf-sel-btn'];
   btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 
-  // token กันการวนข้ามงวด/ซ้ำ — ถ้าเปลี่ยนงวดหรือเริ่มรอบใหม่ token เปลี่ยน รอบเก่าหยุด
+  // token กันวนข้ามงวด/ซ้ำ
   PAY.pdfToken = (PAY.pdfToken || 0) + 1;
   const myToken = PAY.pdfToken;
   PAY.pdfPeriodId = p.periodId;
-
-  let guardRounds = 0;             // กันวนไม่จบ (safety)
-  const maxRounds = 200;
 
   const finish = (msg) => {
     if (txt) txt.textContent = msg;
     btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
     loadPayTable();
-    setTimeout(() => {
-      // ซ่อน progress เฉพาะถ้ายังเป็น token ปัจจุบัน
-      if (progress && myToken === PAY.pdfToken) progress.style.display = 'none';
-    }, 2500);
+    setTimeout(() => { if (progress && myToken === PAY.pdfToken) progress.style.display = 'none'; }, 2500);
   };
 
-  const runBatch = () => {
-    // ถ้า token เปลี่ยน (เปลี่ยนงวด/เริ่มใหม่) หรือออกจากหน้า → หยุด
-    if (myToken !== PAY.pdfToken) return;
-    if (!PAY.currentPeriod || PAY.currentPeriod.periodId !== PAY.pdfPeriodId) return;
-    if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
+  const stillValid = () => (myToken === PAY.pdfToken && PAY.currentPeriod && PAY.currentPeriod.periodId === PAY.pdfPeriodId);
 
-    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds || null, force: force })
+  if (rowIds && rowIds.length) {
+    // ═══ โหมดเลือกเฉพาะคน — frontend แบ่ง batch ทีละ 8 ส่งไปเรื่อยๆ ═══
+    const BATCH = 8;
+    const allIds = rowIds.slice();
+    const totalSel = allIds.length;
+    let idx = 0, errCount = 0;
+
+    const runChunk = () => {
+      if (!stillValid()) return;
+      if (idx >= totalSel) { finish(`✓ สร้าง PDF เสร็จ ${totalSel - errCount}/${totalSel} ใบ`); return; }
+      const chunk = allIds.slice(idx, idx + BATCH);
+      gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: chunk })
+        .withSuccessHandler(r => {
+          if (!stillValid()) return;
+          if (!r || !r.success) { finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ')); return; }
+          if (r.errors && r.errors.length) errCount += r.errors.length;
+          idx += chunk.length;
+          const pct = Math.min(100, Math.round((idx / totalSel) * 100));
+          if (bar) bar.style.width = pct + '%';
+          if (txt) txt.textContent = `กำลังสร้าง PDF... ${idx}/${totalSel}`;
+          runChunk();
+        })
+        .withFailureHandler(() => { if (stillValid()) finish('✗ เกิดข้อผิดพลาดในการเชื่อมต่อ'); });
+    };
+    runChunk();
+    return;
+  }
+
+  // ═══ โหมดทั้งงวด — backend หยิบ 8 คนแรกที่ยังไม่มี url, วนจน done ═══
+  let guardRounds = 0;
+  const maxRounds = 300;
+  const runBatch = () => {
+    if (!stillValid()) return;
+    if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
+    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: null })
       .withSuccessHandler(r => {
-        if (myToken !== PAY.pdfToken) return;   // token เปลี่ยนระหว่างรอ = ทิ้งผล
-        if (!r || !r.success) {
-          finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ'));
-          return;
-        }
-        // ใช้ค่าจาก backend ตรงๆ (ไม่สะสมเอง)
+        if (!stillValid()) return;
+        if (!r || !r.success) { finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ')); return; }
         const total = r.scopeTotal || 0;
         const done = r.doneCount || 0;
         const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 100;
         if (bar) bar.style.width = pct + '%';
         if (txt) txt.textContent = `กำลังสร้าง PDF... ${done}/${total}`;
-
-        // หยุดเมื่อ: backend บอก done, หรือ remaining<=0, หรือรอบนี้สร้างไม่ได้เลย (กันค้าง)
         if (r.done || r.remaining <= 0) {
           finish(`✓ สร้าง PDF เสร็จ ${done}/${total} ใบ`);
         } else if (r.generatedThisBatch === 0) {
-          // รอบนี้สร้างไม่ได้เลยแต่ยังมี remaining = มีปัญหา (เช่น error ทุกใบ) → หยุดกันวนไม่จบ
-          finish(`⚠️ หยุด — สร้างได้ ${done}/${total} (บางรายการสร้างไม่สำเร็จ ลองใหม่อีกครั้ง)`);
+          finish(`⚠️ หยุด — สร้างได้ ${done}/${total} (บางรายการสร้างไม่สำเร็จ ลองใหม่)`);
         } else {
-          runBatch();   // วนต่อ
+          runBatch();
         }
       })
-      .withFailureHandler(() => {
-        if (myToken !== PAY.pdfToken) return;
-        finish('✗ เกิดข้อผิดพลาดในการเชื่อมต่อ');
-      });
+      .withFailureHandler(() => { if (stillValid()) finish('✗ เกิดข้อผิดพลาดในการเชื่อมต่อ'); });
   };
   runBatch();
 }
