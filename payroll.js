@@ -560,3 +560,50 @@ function initPayrollBindings() {
   on('pay-edit-cancel', 'click', () => { document.getElementById('pay-edit-overlay').style.display = 'none'; });
   on('pay-edit-close', 'click', () => { document.getElementById('pay-edit-overlay').style.display = 'none'; });
 }
+
+// ════════ การ์ดสลิปเงินเดือนพนักงาน ════════
+function loadMyPayslips() {
+  const box = document.getElementById('my-payslip-list');
+  if (box) box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3)">กำลังโหลด...</div>';
+  gasRun('payGetMySlips', { token: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { if (box) box.innerHTML = '<div style="padding:20px;color:var(--er)">' + payEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
+      renderMyPayslips(r.slips || []);
+    })
+    .withFailureHandler(() => { if (box) box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
+}
+
+function renderMyPayslips(slips) {
+  const box = document.getElementById('my-payslip-list');
+  if (!box) return;
+  if (!slips.length) {
+    box.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--tx3)">ยังไม่มีสลิปเงินเดือน</div>';
+    return;
+  }
+
+  box.innerHTML = slips.map(s => `
+    <div class="lv-card" style="padding:0;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:16px;font-weight:700">${payEsc(s.payRound)}</div>
+          <div style="font-size:12px;opacity:.9">จ่าย ${payEsc(payFmtDate(s.payDate))}</div>
+        </div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px">
+          <span style="color:var(--tx2)">รวมเงินได้</span>
+          <span style="font-weight:600;font-variant-numeric:tabular-nums">${payMoney(s.income)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px">
+          <span style="color:var(--tx2)">รวมเงินหัก</span>
+          <span style="font-weight:600;color:var(--er);font-variant-numeric:tabular-nums">${payMoney(s.deduct)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0 5px;margin-top:5px;border-top:1.5px solid var(--bd);font-size:16px">
+          <span style="font-weight:700">เงินได้สุทธิ</span>
+          <span style="font-weight:700;color:var(--ac);font-variant-numeric:tabular-nums">${payMoney(s.net)} บาท</span>
+        </div>
+        ${s.bankAcct ? `<div style="font-size:12px;color:var(--tx3);margin-top:6px">เลขบัญชี ${payEsc(s.bankAcct)}</div>` : ''}
+        <a href="${payEsc(s.url)}" target="_blank" class="btn p" style="display:block;text-align:center;text-decoration:none;margin-top:12px">📄 เปิดสลิป PDF</a>
+      </div>
+    </div>`).join('');
+}

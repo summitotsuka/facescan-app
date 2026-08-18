@@ -693,6 +693,7 @@ function initOTBindings() {
   on('hr-menu-ot-report', 'click', () => go('ot-report'));
   // แท็บพนักงาน — ไปหน้าประวัติ (hub) ที่มีปุ่มขอ OT + อนุมัติ
   on('tab-ot', 'click', () => go('ot-history'));
+  on('tab-ot-appr', 'click', () => go('ot-approve'));
   on('ot-goto-form', 'click', () => go('ot-form'));
   on('ot-goto-approve', 'click', () => go('ot-approve'));
 }

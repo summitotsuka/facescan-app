@@ -72,7 +72,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(
 .page{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px calc(20px + var(--sab));z-index:1}
 .page.active{display:block}
 #page-kiosk.active{display:flex}
-.page.with-strip{top:88px}
+.page.with-strip{top:96px}
 
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}
@@ -223,16 +223,18 @@ textarea.inp{resize:vertical;min-height:60px}
 <body>
 
 <nav>
-  <div class="logo"><span style="font-size:14px;font-weight:600;color:var(--tx);white-space:nowrap">SOM HR System</span><span id="app-version" style="font-size:10px;color:var(--tx3);margin-left:6px"></span></div>
+  <div class="logo"><span style="font-size:16px;font-weight:700;color:var(--tx);white-space:nowrap">SOM HR System</span><span id="app-version" style="font-size:11px;color:var(--tx3);margin-left:6px"></span></div>
   <div class="nav-right">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
       <button class="nav-tab active" id="tab-in">เช็คอิน</button>
       <button class="nav-tab"        id="tab-out">เช็คเอาต์</button>
       <button class="nav-tab ht"    id="tab-hist">เช็คเวลา</button>
+      <button class="nav-tab"        id="tab-payslip">เงินเดือน</button>
       <button class="nav-tab"        id="tab-leave">ลางาน</button>
       <button class="nav-tab"        id="tab-ot">โอที</button>
       <button class="nav-tab"        id="tab-leave-appr" style="display:none">อนุมัติลา</button>
+      <button class="nav-tab"        id="tab-ot-appr" style="display:none">อนุมัติโอที</button>
       <!-- ปุ่มไปหน้าจัดการงานบุคคล (แสดงเฉพาะ HR) -->
       <button class="nav-tab hr" id="nav-hr-work" style="display:none">งานบุคคล</button>
       <!-- แท็บ HR เดิม (ไม่ใช้แล้ว ซ่อนถาวร) -->
@@ -243,13 +245,13 @@ textarea.inp{resize:vertical;min-height:60px}
 </nav>
 
 <!-- Employee strip — แสดงหลัง login สำเร็จ -->
-<div id="emp-strip" style="display:none;background:var(--sf2);border-bottom:1px solid var(--bd);padding:6px 16px;align-items:center;gap:10px;position:fixed;top:52px;left:0;right:0;z-index:99">
-  <div id="emp-avatar" style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ac);flex-shrink:0">—</div>
+<div id="emp-strip" style="display:none;background:var(--sf2);border-bottom:1px solid var(--bd);padding:8px 16px;align-items:center;gap:12px;position:fixed;top:52px;left:0;right:0;z-index:99">
+  <div id="emp-avatar" style="width:34px;height:34px;border-radius:50%;background:rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--ac);flex-shrink:0">—</div>
   <div style="flex:1;min-width:0">
-    <div id="emp-name-strip" style="font-size:12px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
-    <div id="emp-meta-strip" style="font-size:10px;color:var(--tx3)">—</div>
+    <div id="emp-name-strip" style="font-size:15px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+    <div id="emp-meta-strip" style="font-size:13px;font-weight:500;color:var(--tx2)">—</div>
   </div>
-  <button id="btn-logout" style="background:none;border:1px solid var(--bd2);color:var(--tx2);font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:var(--fn);flex-shrink:0">ออกจากระบบ</button>
+  <button id="btn-logout" style="background:none;border:1px solid var(--bd2);color:var(--tx2);font-size:12px;padding:6px 14px;border-radius:7px;cursor:pointer;font-family:var(--fn);flex-shrink:0">ออกจากระบบ</button>
 </div>
 
 <div class="page active" id="page-welcome">
@@ -1309,6 +1311,12 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ═══════════════ สลิปเงินเดือนพนักงาน (การ์ด) ═══════════════ -->
+<div class="page" id="page-my-payslip">
+  <h2 style="margin:0 0 16px;font-size:18px">สลิปเงินเดือนของฉัน</h2>
+  <div id="my-payslip-list"></div>
+</div>
+
 <!-- ═══════════════ อัปโหลดเวลาจากเครื่องสแกนนิ้ว ═══════════════ -->
 <div class="page" id="page-finger">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1761,7 +1769,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','my-payslip'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1808,6 +1816,7 @@ function go(id) {
   if (id === 'ot-report')     { if (typeof loadOTReport === 'function') loadOTReport(); }
   if (id === 'pay-periods')   { if (typeof loadPayPeriods === 'function') loadPayPeriods(); }
   if (id === 'pay-review')    { if (typeof loadPayReview === 'function') loadPayReview(); }
+  if (id === 'my-payslip')    { if (typeof loadMyPayslips === 'function') loadMyPayslips(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
     const sr = document.getElementById('hremp-search'); if (sr) sr.value = '';
@@ -1825,8 +1834,8 @@ function tab(id, el) { go(id); }
  */
 function applyRoleMenus(role) {
   const isHR = role === 'HR';
-  // เมนูพนักงาน — เช็คอิน/เอาต์ ขึ้นกับสวิตช์ CHECKIN_ENABLED, เช็คเวลา/ลางาน แสดงเสมอ
-  const alwaysTabs = ['tab-hist', 'tab-leave', 'tab-ot'];
+  // เมนูพนักงาน — เช็คอิน/เอาต์ ขึ้นกับสวิตช์ CHECKIN_ENABLED, เช็คเวลา/เงินเดือน/ลางาน/โอที แสดงเสมอ
+  const alwaysTabs = ['tab-hist', 'tab-payslip', 'tab-leave', 'tab-ot'];
   alwaysTabs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = '';
@@ -1845,10 +1854,12 @@ function applyRoleMenus(role) {
   const hrWorkBtn = document.getElementById('nav-hr-work');
   if (hrWorkBtn) hrWorkBtn.style.display = isHR ? '' : 'none';
 
-  // แท็บ "อนุมัติลา" — แสดงให้ผู้อนุมัติที่เป็น EMPLOYEE (หัวหน้า/ผู้จัดการ)
+  // แท็บ "อนุมัติลา" + "อนุมัติโอที" — แสดงให้ผู้อนุมัติที่เป็น EMPLOYEE (หัวหน้า/ผู้จัดการ)
   // HR อนุมัติผ่านหน้างานบุคคล ไม่ต้องมีแท็บนี้
   const apprTab = document.getElementById('tab-leave-appr');
   if (apprTab) apprTab.style.display = (!isHR && S.isApprover) ? '' : 'none';
+  const otApprTab = document.getElementById('tab-ot-appr');
+  if (otApprTab) otApprTab.style.display = (!isHR && S.isApprover) ? '' : 'none';
 
   // ข้อความต้อนรับในหน้า HR
   if (isHR) {
@@ -3513,6 +3524,7 @@ applyLogo();
   on('tab-in',   'click', function() { tab('checkin',  document.getElementById('tab-in')); });
   on('tab-out',  'click', function() { tab('checkout', document.getElementById('tab-out')); });
   on('tab-hist', 'click', function() { tab('history',  document.getElementById('tab-hist')); });
+  on('tab-payslip', 'click', function() { tab('my-payslip', document.getElementById('tab-payslip')); });
   on('tab-hr-dash', 'click', function() { go('hr-dash'); });
   on('nav-hr-work', 'click', function() { go('hr-dash'); });
 
