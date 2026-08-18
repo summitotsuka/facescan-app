@@ -263,10 +263,25 @@ function renderPayTable() {
         <th style="background:var(--sf2)"></th>
       </tr></thead><tbody>`;
 
-  html += PAY.rows.map((row, i) => {
+  // เรียงตามรหัสพนักงาน (หน้าเว็บ) — ชีตยังต่อท้ายได้
+  const sortedRows = PAY.rows.slice().sort((a, b) => String(a.empId).localeCompare(String(b.empId), undefined, { numeric: true }));
+
+  let netSum = 0;
+  html += sortedRows.map((row, i) => {
     const warn = row.checkFlag === '⚠️';
     const rowBg = warn ? 'background:rgba(217,119,6,.05)' : '';
-    const pdfLink = row.urlPDF ? `<a href="${payEsc(row.urlPDF)}" target="_blank" style="color:var(--ok);font-size:13px;text-decoration:none">📄 เปิด</a>` : '';
+    const hasPdf = !!row.urlPDF;
+    const pdfLink = hasPdf ? `<a href="${payEsc(row.urlPDF)}" target="_blank" style="color:var(--ok);font-size:13px;text-decoration:none">📄 เปิด</a>` : '';
+    netSum += payNum(row.net);
+    // ปุ่มการกระทำ: มี PDF แล้ว → ลบ (ต้องลบก่อนแก้), ยังไม่มี → แก้ไข (เฉพาะงวด OPEN)
+    let actionBtn = '';
+    if (isOpen) {
+      if (hasPdf) {
+        actionBtn = `<span class="pay-del-link" data-id="${payEsc(row.rowId)}" style="color:var(--er);cursor:pointer;font-weight:600;font-size:13px">ลบ</span>`;
+      } else {
+        actionBtn = `<span class="pay-edit-link" data-id="${payEsc(row.rowId)}" style="color:var(--ac);cursor:pointer;font-weight:600;font-size:13px">แก้ไข</span>`;
+      }
+    }
     return `<tr style="${rowBg}">
       <td style="padding:11px 8px;border-top:1px solid var(--bd);text-align:center"><input type="checkbox" class="pay-row-check" data-id="${payEsc(row.rowId)}" style="cursor:pointer"></td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd)">${i + 1}</td>
@@ -277,19 +292,25 @@ function renderPayTable() {
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${payMoney(row.net)}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:center">${slipBadge(row.statusSlip)} ${pdfLink}</td>
       <td style="padding:11px 12px;border-top:1px solid var(--bd);text-align:center;font-size:16px">${warn ? '⚠️' : '<span style="color:var(--ok)">✓</span>'}</td>
-      <td style="padding:11px 12px;border-top:1px solid var(--bd);white-space:nowrap">
-        ${isOpen ? `<span class="pay-edit-link" data-id="${payEsc(row.rowId)}" style="color:var(--ac);cursor:pointer;font-weight:600;font-size:13px">แก้ไข</span>` : ''}
-      </td>
+      <td style="padding:11px 12px;border-top:1px solid var(--bd);white-space:nowrap">${actionBtn}</td>
     </tr>`;
   }).join('');
 
+  // แถวยอดรวมสุทธิท้ายตาราง
+  html += `<tr style="background:var(--sf2);font-weight:700">
+      <td colspan="6" style="padding:12px;border-top:2px solid var(--bd2);text-align:right">รวมเงินได้สุทธิทั้งงวด (${sortedRows.length} คน)</td>
+      <td style="padding:12px;border-top:2px solid var(--bd2);text-align:right;font-variant-numeric:tabular-nums;color:var(--ac);font-size:15px">${payMoney(netSum)}</td>
+      <td colspan="3" style="border-top:2px solid var(--bd2)"></td>
+    </tr>`;
+
   html += `</tbody></table></div>
     <div style="font-size:12px;color:var(--tx3);padding:12px 16px;border-top:1px solid var(--bd)">
-      แถวสีส้ม = ยอดรวมไม่ตรง (⚠️) คลิก "แก้ไข" เพื่อตรวจสอบ · เลือกเช็คบ็อกซ์เพื่อสร้าง PDF เฉพาะคน ${isOpen ? '' : '· งวดนี้ปิดแล้ว แก้ไขไม่ได้'}
+      แถวสีส้ม = ยอดรวมไม่ตรง (⚠️) · คนที่มี PDF แล้วต้องกด "ลบ" (ลบแถว+ไฟล์) ก่อนโหลดใหม่ · เรียงตามรหัสพนักงาน ${isOpen ? '' : '· งวดนี้ปิดแล้ว แก้ไขไม่ได้'}
     </div></div>`;
 
   box.innerHTML = html;
   box.querySelectorAll('.pay-edit-link').forEach(el => el.addEventListener('click', () => openPayEdit(el.getAttribute('data-id'))));
+  box.querySelectorAll('.pay-del-link').forEach(el => el.addEventListener('click', () => payDeleteRowWithPdf(el.getAttribute('data-id'))));
   // เช็คบ็อกซ์
   const checkAll = document.getElementById('pay-check-all');
   if (checkAll) checkAll.addEventListener('change', () => {
@@ -434,7 +455,7 @@ function payGenPDF(rowIds, forceAll) {
   if (progress) progress.style.display = 'block';
   if (bar) bar.style.width = '0%';
 
-  const btns = ['pay-genpdf-btn', 'pay-genpdf-all-btn', 'pay-genpdf-sel-btn'];
+  const btns = ['pay-genpdf-all-btn', 'pay-genpdf-sel-btn'];
   btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 
   // token กันวนข้ามงวด/ซ้ำ
@@ -530,6 +551,17 @@ function payGenPDFSelected() {
   payGenPDF(ids);
 }
 
+// ลบแถวที่มี PDF แล้ว (ลบแถว + ไฟล์ PDF) — ใช้ตอนต้องแก้ไขคนที่สร้างสลิปแล้ว
+function payDeleteRowWithPdf(rowId) {
+  if (!confirm('คนนี้สร้างสลิป PDF แล้ว\nการลบจะลบทั้งข้อมูลและไฟล์ PDF\nจากนั้นค่อยแก้ไขในไฟล์ Excel แล้วโหลดใหม่\n\nยืนยันลบ?')) return;
+  gasRun('payDeleteRow', { hrToken: S.hrToken, rowId: rowId })
+    .withSuccessHandler(r => {
+      if (r && r.success) { showToast('ลบเรียบร้อย'); loadPayTable(); }
+      else showToast((r && r.message) || 'ลบไม่สำเร็จ');
+    })
+    .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
+}
+
 // ════════ ผูก event ════════
 function initPayrollBindings() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
@@ -546,8 +578,7 @@ function initPayrollBindings() {
   on('pay-create-cancel', 'click', () => { document.getElementById('pay-create-form').style.display = 'none'; });
   // หน้าตรวจสอบ
   on('pay-review-back', 'click', () => go('pay-periods'));
-  on('pay-genpdf-btn', 'click', () => payGenPDF(null, false));
-  on('pay-genpdf-all-btn', 'click', () => { if (confirm('สร้าง PDF ใหม่ทั้งงวด (ทับของเดิมทุกคน)?')) payGenPDF(null, true); });
+  on('pay-genpdf-all-btn', 'click', () => payGenPDF(null, true));
   on('pay-genpdf-sel-btn', 'click', payGenPDFSelected);
   on('pay-upload-file', 'change', function(e) {
     const f = e.target.files && e.target.files[0];
