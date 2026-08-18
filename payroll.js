@@ -20,6 +20,12 @@ function payMoney(v) {
   const n = Number(v) || 0;
   return n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
+// แปลงเป็นตัวเลข (กัน string มีลูกน้ำ)
+function payNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = parseFloat(String(v).replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+}
 // yyyy-MM-dd → dd/MM/yyyy
 function payFmtDate(s) {
   if (!s) return '';
