@@ -424,7 +424,8 @@ function deletePayRow() {
 
 // ════════ สร้าง PDF ════════
 // 2 โหมด: ทั้งงวด (backend หยิบ batch เอง วนจนหมด) / เลือกเฉพาะคน (frontend แบ่ง batch เอง)
-function payGenPDF(rowIds) {
+// forceAll=true = สร้างใหม่ทั้งงวด (ทับของเดิม)
+function payGenPDF(rowIds, forceAll) {
   const p = PAY.currentPeriod;
   if (!p) return;
   const progress = document.getElementById('pay-pdf-progress');
@@ -433,7 +434,7 @@ function payGenPDF(rowIds) {
   if (progress) progress.style.display = 'block';
   if (bar) bar.style.width = '0%';
 
-  const btns = ['pay-genpdf-btn', 'pay-genpdf-sel-btn'];
+  const btns = ['pay-genpdf-btn', 'pay-genpdf-all-btn', 'pay-genpdf-sel-btn'];
   btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 
   // token กันวนข้ามงวด/ซ้ำ
@@ -451,11 +452,12 @@ function payGenPDF(rowIds) {
   const stillValid = () => (myToken === PAY.pdfToken && PAY.currentPeriod && PAY.currentPeriod.periodId === PAY.pdfPeriodId);
 
   if (rowIds && rowIds.length) {
-    // ═══ โหมดเลือกเฉพาะคน — frontend แบ่ง batch ทีละ 8 ส่งไปเรื่อยๆ ═══
-    const BATCH = 8;
+    // ═══ โหมดเลือกเฉพาะคน — frontend แบ่ง batch ทีละ 5 ส่งไปเรื่อยๆ ═══
+    const BATCH = 5;
     const allIds = rowIds.slice();
     const totalSel = allIds.length;
-    let idx = 0, errCount = 0;
+    let idx = 0, errCount = 0, retries = 0;
+    const MAX_RETRY = 2;
 
     const runChunk = () => {
       if (!stillValid()) return;
@@ -464,30 +466,46 @@ function payGenPDF(rowIds) {
       gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: chunk })
         .withSuccessHandler(r => {
           if (!stillValid()) return;
-          if (!r || !r.success) { finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ')); return; }
+          if (!r || !r.success) {
+            // retry chunk เดิมก่อนยอมแพ้
+            if (retries < MAX_RETRY) { retries++; if (txt) txt.textContent = `ลองใหม่... ${idx}/${totalSel}`; setTimeout(runChunk, 800); return; }
+            finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ') + ` (สร้างได้ ${idx}/${totalSel})`);
+            return;
+          }
+          retries = 0;   // สำเร็จ → reset retry
           if (r.errors && r.errors.length) errCount += r.errors.length;
           idx += chunk.length;
           const pct = Math.min(100, Math.round((idx / totalSel) * 100));
           if (bar) bar.style.width = pct + '%';
           if (txt) txt.textContent = `กำลังสร้าง PDF... ${idx}/${totalSel}`;
-          runChunk();
+          setTimeout(runChunk, 150);   // หน่วงเล็กน้อยกัน quota
         })
-        .withFailureHandler(() => { if (stillValid()) finish('✗ เกิดข้อผิดพลาดในการเชื่อมต่อ'); });
+        .withFailureHandler(() => {
+          if (!stillValid()) return;
+          // การเชื่อมต่อล้ม → retry
+          if (retries < MAX_RETRY) { retries++; if (txt) txt.textContent = `ลองใหม่... ${idx}/${totalSel}`; setTimeout(runChunk, 1000); return; }
+          finish(`✗ การเชื่อมต่อขัดข้อง (สร้างได้ ${idx}/${totalSel} — กดสร้างอีกครั้งเพื่อทำต่อ)`);
+        });
     };
     runChunk();
     return;
   }
 
-  // ═══ โหมดทั้งงวด — backend หยิบ 8 คนแรกที่ยังไม่มี url, วนจน done ═══
-  let guardRounds = 0;
-  const maxRounds = 300;
+  // ═══ โหมดทั้งงวด — backend หยิบ batch, วนจน done (forceAll=true สร้างใหม่ทั้งงวด) ═══
+  let guardRounds = 0, allRetries = 0;
+  const maxRounds = 300, MAX_RETRY_ALL = 2;
   const runBatch = () => {
     if (!stillValid()) return;
     if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
-    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: null })
+    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: null, force: !!forceAll })
       .withSuccessHandler(r => {
         if (!stillValid()) return;
-        if (!r || !r.success) { finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ')); return; }
+        if (!r || !r.success) {
+          if (allRetries < MAX_RETRY_ALL) { allRetries++; if (txt) txt.textContent = 'ลองใหม่...'; setTimeout(runBatch, 900); return; }
+          finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ'));
+          return;
+        }
+        allRetries = 0;
         const total = r.scopeTotal || 0;
         const done = r.doneCount || 0;
         const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 100;
@@ -528,7 +546,8 @@ function initPayrollBindings() {
   on('pay-create-cancel', 'click', () => { document.getElementById('pay-create-form').style.display = 'none'; });
   // หน้าตรวจสอบ
   on('pay-review-back', 'click', () => go('pay-periods'));
-  on('pay-genpdf-btn', 'click', () => payGenPDF(null));
+  on('pay-genpdf-btn', 'click', () => payGenPDF(null, false));
+  on('pay-genpdf-all-btn', 'click', () => { if (confirm('สร้าง PDF ใหม่ทั้งงวด (ทับของเดิมทุกคน)?')) payGenPDF(null, true); });
   on('pay-genpdf-sel-btn', 'click', payGenPDFSelected);
   on('pay-upload-file', 'change', function(e) {
     const f = e.target.files && e.target.files[0];
