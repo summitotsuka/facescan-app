@@ -8,6 +8,8 @@ const PAY = {
   currentPeriod: null,   // งวดที่กำลังตรวจสอบ
   rows: [],
   editRowId: null,
+  pdfToken: 0,           // token กัน batch PDF วนข้ามงวด/ซ้ำ
+  pdfPeriodId: null,
 };
 
 function payEsc(s) {
@@ -145,6 +147,10 @@ function loadPayReview() {
 
   document.getElementById('pay-upload-status').textContent = '';
   document.getElementById('pay-load-result').innerHTML = '';
+  // reset progress + ยกเลิก batch เก่า (กัน progress ค้างจากงวดก่อน)
+  PAY.pdfToken = (PAY.pdfToken || 0) + 1;
+  const prog = document.getElementById('pay-pdf-progress');
+  if (prog) prog.style.display = 'none';
   loadPayTable();
 }
 
@@ -431,34 +437,57 @@ function payGenPDF(rowIds) {
   const btns = ['pay-genpdf-btn', 'pay-genpdf-sel-btn'];
   btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
 
-  let totalDone = 0, totalAll = 0;
+  // token กันการวนข้ามงวด/ซ้ำ — ถ้าเปลี่ยนงวดหรือเริ่มรอบใหม่ token เปลี่ยน รอบเก่าหยุด
+  PAY.pdfToken = (PAY.pdfToken || 0) + 1;
+  const myToken = PAY.pdfToken;
+  PAY.pdfPeriodId = p.periodId;
+
+  let guardRounds = 0;             // กันวนไม่จบ (safety)
+  const maxRounds = 200;
+
+  const finish = (msg) => {
+    if (txt) txt.textContent = msg;
+    btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+    loadPayTable();
+    setTimeout(() => {
+      // ซ่อน progress เฉพาะถ้ายังเป็น token ปัจจุบัน
+      if (progress && myToken === PAY.pdfToken) progress.style.display = 'none';
+    }, 2500);
+  };
+
   const runBatch = () => {
+    // ถ้า token เปลี่ยน (เปลี่ยนงวด/เริ่มใหม่) หรือออกจากหน้า → หยุด
+    if (myToken !== PAY.pdfToken) return;
+    if (!PAY.currentPeriod || PAY.currentPeriod.periodId !== PAY.pdfPeriodId) return;
+    if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
+
     gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds || null, force: force })
       .withSuccessHandler(r => {
+        if (myToken !== PAY.pdfToken) return;   // token เปลี่ยนระหว่างรอ = ทิ้งผล
         if (!r || !r.success) {
-          if (txt) txt.textContent = '✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ');
-          btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+          finish('✗ ' + ((r && r.message) || 'สร้างไม่สำเร็จ'));
           return;
         }
-        // รอบแรก set total
-        if (totalAll === 0) totalAll = r.total;
-        totalDone += r.generated;
-        const pct = totalAll ? Math.round((totalDone / totalAll) * 100) : 100;
+        // ใช้ค่าจาก backend ตรงๆ (ไม่สะสมเอง)
+        const total = r.scopeTotal || 0;
+        const done = r.doneCount || 0;
+        const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 100;
         if (bar) bar.style.width = pct + '%';
-        if (txt) txt.textContent = `กำลังสร้าง PDF... ${totalDone}/${totalAll}`;
+        if (txt) txt.textContent = `กำลังสร้าง PDF... ${done}/${total}`;
 
-        if (!r.done && r.remaining > 0) {
-          runBatch();   // วนต่อ
+        // หยุดเมื่อ: backend บอก done, หรือ remaining<=0, หรือรอบนี้สร้างไม่ได้เลย (กันค้าง)
+        if (r.done || r.remaining <= 0) {
+          finish(`✓ สร้าง PDF เสร็จ ${done}/${total} ใบ`);
+        } else if (r.generatedThisBatch === 0) {
+          // รอบนี้สร้างไม่ได้เลยแต่ยังมี remaining = มีปัญหา (เช่น error ทุกใบ) → หยุดกันวนไม่จบ
+          finish(`⚠️ หยุด — สร้างได้ ${done}/${total} (บางรายการสร้างไม่สำเร็จ ลองใหม่อีกครั้ง)`);
         } else {
-          if (txt) txt.textContent = `✓ สร้าง PDF เสร็จ ${totalDone} ใบ`;
-          btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
-          loadPayTable();
-          setTimeout(() => { if (progress) progress.style.display = 'none'; }, 2500);
+          runBatch();   // วนต่อ
         }
       })
       .withFailureHandler(() => {
-        if (txt) txt.textContent = '✗ เกิดข้อผิดพลาด';
-        btns.forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+        if (myToken !== PAY.pdfToken) return;
+        finish('✗ เกิดข้อผิดพลาดในการเชื่อมต่อ');
       });
   };
   runBatch();
