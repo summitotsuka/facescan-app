@@ -784,7 +784,7 @@ function doPayTgSend() {
     const at = document.getElementById('paytg-sched-at').value;
     if (!at) { showToast('เลือกวันเวลาก่อน'); if (btn) btn.disabled = false; return; }
     if (status) status.textContent = 'กำลังตั้งเวลา...';
-    gasRun('payTelegramSchedule', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds, sendAt: at })
+    gasRunNoRetry('payTelegramSchedule', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds, sendAt: at })
       .withSuccessHandler(r => {
         if (btn) btn.disabled = false;
         if (r && r.success) { if (status) status.textContent = '✓ ' + r.message; loadPayTgSchedules(); }
@@ -794,7 +794,7 @@ function doPayTgSend() {
   } else {
     // ส่งทันที
     if (status) status.textContent = 'กำลังส่ง...';
-    gasRun('payTelegramSendNow', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds })
+    gasRunNoRetry('payTelegramSendNow', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds })
       .withSuccessHandler(r => {
         if (btn) btn.disabled = false;
         if (r && r.success) {
