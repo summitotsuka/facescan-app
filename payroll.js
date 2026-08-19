@@ -573,6 +573,7 @@ function initPayrollBindings() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
   // เมนู HR
   on('hr-menu-payroll', 'click', () => go('pay-periods'));
+  on('hr-menu-payreport', 'click', () => go('pay-report'));
   // หน้าจัดการงวด
   on('pay-periods-back', 'click', () => go('hr-dash'));
   on('pay-periods-refresh', 'click', loadPayPeriods);
@@ -620,28 +621,26 @@ function renderMyPayslips(slips) {
   }
 
   box.innerHTML = slips.map(s => `
-    <div class="lv-card" style="padding:0;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:14px 16px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:16px;font-weight:700">${payEsc(s.payRound)}</div>
-          <div style="font-size:12px;opacity:.9">จ่าย ${payEsc(payFmtDate(s.payDate))}</div>
-        </div>
+    <div class="lv-card" style="padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+        <div style="font-size:15px;font-weight:700">${payEsc(s.payRound)}</div>
+        <div style="font-size:12px;color:var(--tx3)">จ่าย ${payEsc(payFmtDate(s.payDate))}</div>
       </div>
-      <div style="padding:14px 16px">
-        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px">
-          <span style="color:var(--tx2)">รวมเงินได้</span>
-          <span style="font-weight:600;font-variant-numeric:tabular-nums">${payMoney(s.income)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px">
-          <span style="color:var(--tx2)">รวมเงินหัก</span>
-          <span style="font-weight:600;color:var(--er);font-variant-numeric:tabular-nums">${payMoney(s.deduct)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0 5px;margin-top:5px;border-top:1.5px solid var(--bd);font-size:16px">
-          <span style="font-weight:700">เงินได้สุทธิ</span>
-          <span style="font-weight:700;color:var(--ac);font-variant-numeric:tabular-nums">${payMoney(s.net)} บาท</span>
-        </div>
-        ${s.bankAcct ? `<div style="font-size:12px;color:var(--tx3);margin-top:6px">เลขบัญชี ${payEsc(s.bankAcct)}</div>` : ''}
-        <a href="${payEsc(s.url)}" target="_blank" class="btn p" style="display:block;text-align:center;text-decoration:none;margin-top:12px">📄 เปิดสลิป PDF</a>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px">
+        <span style="color:var(--tx2)">รวมเงินได้</span>
+        <span style="font-variant-numeric:tabular-nums">${payMoney(s.income)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px">
+        <span style="color:var(--tx2)">รวมเงินหัก</span>
+        <span style="color:var(--er);font-variant-numeric:tabular-nums">${payMoney(s.deduct)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0 4px;margin-top:4px;border-top:1px solid var(--bd);font-size:15px">
+        <span style="font-weight:700">เงินได้สุทธิ</span>
+        <span style="font-weight:700;color:var(--ac);font-variant-numeric:tabular-nums">${payMoney(s.net)} บาท</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        ${s.bankAcct ? `<span style="font-size:12px;color:var(--tx3)">เลขบัญชี ${payEsc(s.bankAcct)}</span>` : '<span></span>'}
+        <a href="${payEsc(s.url)}" target="_blank" style="font-size:13px;color:var(--ac);text-decoration:none;font-weight:600">ดูสลิป PDF →</a>
       </div>
     </div>`).join('');
 }
@@ -805,4 +804,216 @@ function doPayTgSend() {
       })
       .withFailureHandler(() => { if (btn) btn.disabled = false; if (status) status.textContent = '✗ เกิดข้อผิดพลาด'; });
   }
+}
+
+// ════════════════════════════════════════════════
+//  รายงานเงินเดือน (frontend)
+// ════════════════════════════════════════════════
+const PAYREP = { periodScope: 'all', empScope: 'all', meta: null, lastResult: null };
+
+function loadPayReport() {
+  // reset
+  PAYREP.periodScope = 'all'; PAYREP.empScope = 'all'; PAYREP.lastResult = null;
+  document.getElementById('payrep-result').innerHTML = '';
+  payrepSyncScopeUI();
+  // โหลด meta (งวด/คน/คอลัมน์)
+  gasRun('payGetReportMeta', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { showToast((r && r.message) || 'โหลดไม่สำเร็จ'); return; }
+      PAYREP.meta = r;
+      renderPayrepPeriods(r.periods || []);
+      renderPayrepEmps(r.people || []);
+      renderPayrepCols(r.columns || []);
+    })
+    .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
+}
+
+function payrepSetPeriodScope(scope) {
+  PAYREP.periodScope = scope;
+  document.getElementById('payrep-period-list').style.display = (scope === 'pick') ? 'block' : 'none';
+  payrepSyncScopeUI();
+}
+function payrepSetEmpScope(scope) {
+  PAYREP.empScope = scope;
+  document.getElementById('payrep-emp-box').style.display = (scope === 'pick') ? 'block' : 'none';
+  payrepSyncScopeUI();
+}
+function payrepSyncScopeUI() {
+  document.querySelectorAll('.payrep-pscope').forEach(b => b.classList.toggle('active', b.getAttribute('data-scope') === PAYREP.periodScope));
+  document.querySelectorAll('.payrep-escope').forEach(b => b.classList.toggle('active', b.getAttribute('data-scope') === PAYREP.empScope));
+}
+
+function renderPayrepPeriods(periods) {
+  const box = document.getElementById('payrep-period-list');
+  if (!box) return;
+  box.innerHTML = periods.map(p => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:14px">
+      <input type="checkbox" class="payrep-period-chk" value="${payEsc(p.periodId)}">
+      <span>${payEsc(p.payRound || p.periodId)} · จ่าย ${payEsc(payFmtDate(p.payDate))}</span>
+    </label>`).join('') || '<div style="color:var(--tx3);font-size:13px">ไม่มีงวด</div>';
+}
+
+function renderPayrepEmps(people) {
+  const box = document.getElementById('payrep-emp-list');
+  if (!box) return;
+  box.innerHTML = people.map(p => `
+    <label class="payrep-emp-row" data-search="${payEsc((p.empId + ' ' + p.name).toLowerCase())}" style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:14px">
+      <input type="checkbox" class="payrep-emp-chk" value="${payEsc(p.empId)}">
+      <span>${payEsc(p.empId)} · ${payEsc(p.name)}</span>
+    </label>`).join('') || '<div style="color:var(--tx3);font-size:13px">ไม่มีข้อมูล</div>';
+}
+function payrepFilterEmp(q) {
+  q = (q || '').toLowerCase().trim();
+  document.querySelectorAll('.payrep-emp-row').forEach(row => {
+    const s = row.getAttribute('data-search') || '';
+    row.style.display = (!q || s.indexOf(q) !== -1) ? 'flex' : 'none';
+  });
+}
+
+function renderPayrepCols(columns) {
+  const box = document.getElementById('payrep-col-list');
+  if (!box) return;
+  box.innerHTML = columns.map(c => `
+    <label style="display:flex;align-items:center;gap:7px;padding:4px 0;cursor:pointer;font-size:13.5px;break-inside:avoid">
+      <input type="checkbox" class="payrep-col-chk" value="${payEsc(c.key)}" ${c.def ? 'checked' : ''}>
+      <span>${payEsc(c.label)}</span>
+    </label>`).join('');
+}
+function payrepToggleCols() {
+  const box = document.getElementById('payrep-col-list');
+  box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+}
+
+function payrepRun() {
+  const periodIds = (PAYREP.periodScope === 'pick')
+    ? Array.from(document.querySelectorAll('.payrep-period-chk:checked')).map(c => c.value) : [];
+  const empIds = (PAYREP.empScope === 'pick')
+    ? Array.from(document.querySelectorAll('.payrep-emp-chk:checked')).map(c => c.value) : [];
+  const colKeys = Array.from(document.querySelectorAll('.payrep-col-chk:checked')).map(c => c.value);
+
+  if (PAYREP.periodScope === 'pick' && !periodIds.length) { showToast('เลือกงวดก่อน'); return; }
+  if (PAYREP.empScope === 'pick' && !empIds.length) { showToast('เลือกพนักงานก่อน'); return; }
+
+  const box = document.getElementById('payrep-result');
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx3)">กำลังโหลด...</div>';
+
+  gasRun('payGetReport', { hrToken: S.hrToken, periodIds: periodIds, empIds: empIds, colKeys: colKeys })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { box.innerHTML = '<div style="padding:20px;color:var(--er)">' + payEsc((r && r.message) || 'โหลดไม่สำเร็จ') + '</div>'; return; }
+      PAYREP.lastResult = r;
+      renderPayrepTable(r);
+    })
+    .withFailureHandler(() => { box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
+}
+
+function renderPayrepTable(r) {
+  const box = document.getElementById('payrep-result');
+  if (!r.rows.length) { box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3)">ไม่พบข้อมูลตามเงื่อนไข</div>'; return; }
+
+  const cols = r.columns;
+  const showPeriod = r.multiPeriod;
+
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px">
+      <div style="font-size:14px;color:var(--tx2)">พบ ${r.count} รายการ</div>
+      <button class="btn p sm" onclick="payrepExport()" style="width:auto;padding:8px 18px">📥 Export Excel</button>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap">
+    <thead><tr style="background:var(--sf2)">`;
+  if (showPeriod) html += '<th style="padding:9px 10px;text-align:left;position:sticky;left:0;background:var(--sf2)">งวด</th>';
+  cols.forEach(c => { html += `<th style="padding:9px 10px;text-align:${c.num ? 'right' : 'left'}">${payEsc(c.label)}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  r.rows.forEach(row => {
+    html += '<tr>';
+    if (showPeriod) html += `<td style="padding:8px 10px;border-top:1px solid var(--bd);position:sticky;left:0;background:var(--sf);font-size:12px">${payEsc(row._payRound || row._periodId)}</td>`;
+    cols.forEach(c => {
+      const v = c.num ? payMoney(row[c.key]) : payEsc(String(row[c.key] || ''));
+      html += `<td style="padding:8px 10px;border-top:1px solid var(--bd);text-align:${c.num ? 'right' : 'left'};font-variant-numeric:tabular-nums">${v}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  // แถวรวม
+  html += '<tr style="background:var(--sf2);font-weight:700">';
+  let firstNum = true;
+  if (showPeriod) html += '<td style="padding:10px;border-top:2px solid var(--bd2);position:sticky;left:0;background:var(--sf2)">รวม</td>';
+  cols.forEach((c, i) => {
+    if (c.num) {
+      const label = (!showPeriod && firstNum && i > 0) ? '' : '';
+      html += `<td style="padding:10px;border-top:2px solid var(--bd2);text-align:right;color:var(--ac);font-variant-numeric:tabular-nums">${payMoney(r.totals[c.key])}</td>`;
+      firstNum = false;
+    } else {
+      html += `<td style="padding:10px;border-top:2px solid var(--bd2)">${(!showPeriod && i === 0) ? 'รวม' : ''}</td>`;
+    }
+  });
+  html += '</tr></tbody></table></div>';
+  box.innerHTML = html;
+}
+
+// โหลด SheetJS แบบ lazy (ตอนกด export ครั้งแรก)
+function payrepEnsureXLSX(cb) {
+  if (typeof XLSX !== 'undefined') { cb(true); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.onload = () => cb(true);
+  s.onerror = () => cb(false);
+  document.head.appendChild(s);
+}
+
+// Export Excel (ใช้ SheetJS โหลด lazy, fallback CSV ถ้าโหลดไม่ได้)
+function payrepExport() {
+  const r = PAYREP.lastResult;
+  if (!r || !r.rows.length) { showToast('ไม่มีข้อมูล'); return; }
+  const cols = r.columns;
+  const showPeriod = r.multiPeriod;
+
+  // สร้าง array of arrays
+  const header = [];
+  if (showPeriod) { header.push('งวด', 'วันจ่าย'); }
+  cols.forEach(c => header.push(c.label));
+  const aoa = [header];
+
+  r.rows.forEach(row => {
+    const line = [];
+    if (showPeriod) { line.push(row._payRound || row._periodId, payFmtDate(row._payDate)); }
+    cols.forEach(c => line.push(c.num ? payNum(row[c.key]) : String(row[c.key] || '')));
+    aoa.push(line);
+  });
+  // แถวรวม
+  const totalLine = [];
+  if (showPeriod) { totalLine.push('รวม', ''); }
+  cols.forEach((c, i) => {
+    if (c.num) totalLine.push(payNum(r.totals[c.key]));
+    else totalLine.push(i === 0 && !showPeriod ? 'รวม' : '');
+  });
+  aoa.push(totalLine);
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  showToast('กำลังสร้างไฟล์...');
+
+  payrepEnsureXLSX(ok => {
+    if (ok && typeof XLSX !== 'undefined') {
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'รายงานเงินเดือน');
+        XLSX.writeFile(wb, 'payroll_report_' + dateStr + '.xlsx');
+      } catch (e) { payrepExportCsv(aoa, dateStr); }
+    } else {
+      payrepExportCsv(aoa, dateStr);   // fallback
+    }
+  });
+}
+
+function payrepExportCsv(aoa, dateStr) {
+  const csv = aoa.map(row => row.map(cell => {
+    const s = String(cell == null ? '' : cell);
+    return (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'payroll_report_' + dateStr + '.csv';
+  a.click();
 }

@@ -185,7 +185,7 @@ select.inp option{background:var(--sf2)}
 .btn.p{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
 .btn.d{background:linear-gradient(135deg,var(--er),#dc2626);color:#fff}
 .btn.o{background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2)}
-.paytg-mode.active,.paytg-time.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
+.paytg-mode.active,.paytg-time.active,.payrep-pscope.active,.payrep-escope.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
 .btn.sm{width:auto;padding:8px 16px;font-size:12px;border-radius:8px;margin-bottom:0}
 
 .empid-box{background:var(--sf2);border:1px solid rgba(16,185,129,.3);border-radius:14px;padding:24px;text-align:center;margin:16px 0}
@@ -646,6 +646,14 @@ textarea.inp{resize:vertical;min-height:60px}
       <div style="flex:1">
         <div class="hr-menu-title">สลิปเงินเดือน</div>
         <div class="hr-menu-desc">จัดการงวด นำเข้าข้อมูล ตรวจสอบ</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+    <div class="hr-menu-card" id="hr-menu-payreport">
+      <div class="hr-menu-icon" style="background:rgba(59,130,246,.12);color:var(--ac)">📊</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงานเงินเดือน</div>
+        <div class="hr-menu-desc">เลือกคน/งวด/คอลัมน์ · ดูตาราง · Export Excel</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -1314,6 +1322,51 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ═══════════════ รายงานเงินเดือน ═══════════════ -->
+<div class="page" id="page-pay-report">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn o sm" id="payrep-back" onclick="go('hr-dash')" style="width:auto;padding:7px 14px">← กลับ</button>
+    <h2 style="margin:0;font-size:18px">รายงานเงินเดือน</h2>
+  </div>
+
+  <!-- 1. เลือกงวด -->
+  <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:8px">1. เลือกงวด</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn o sm payrep-pscope active" data-scope="all" onclick="payrepSetPeriodScope('all')" style="width:auto;padding:8px 16px">ทั้งหมด</button>
+    <button class="btn o sm payrep-pscope" data-scope="pick" onclick="payrepSetPeriodScope('pick')" style="width:auto;padding:8px 16px">เลือกงวด</button>
+  </div>
+  <div id="payrep-period-list" style="display:none;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:16px;max-height:160px;overflow-y:auto"></div>
+  <div style="height:8px"></div>
+
+  <!-- 2. เลือกคน -->
+  <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:8px">2. เลือกพนักงาน</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn o sm payrep-escope active" data-scope="all" onclick="payrepSetEmpScope('all')" style="width:auto;padding:8px 16px">ทั้งหมด</button>
+    <button class="btn o sm payrep-escope" data-scope="pick" onclick="payrepSetEmpScope('pick')" style="width:auto;padding:8px 16px">เลือกคน</button>
+  </div>
+  <div id="payrep-emp-box" style="display:none;margin-bottom:16px">
+    <input type="text" id="payrep-emp-search" placeholder="ค้นหารหัส/ชื่อ..." oninput="payrepFilterEmp(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--bd2);border-radius:9px;font-family:var(--fn);font-size:14px;margin-bottom:8px">
+    <div id="payrep-emp-list" style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px;max-height:200px;overflow-y:auto"></div>
+  </div>
+  <div style="height:8px"></div>
+
+  <!-- 3. เลือกคอลัมน์ -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2)">3. เลือกคอลัมน์ <span style="font-weight:400;color:var(--tx3)">(ไม่ติ๊ก = ทุกคอลัมน์)</span></div>
+    <button class="btn o sm" onclick="payrepToggleCols()" id="payrep-col-toggle" style="width:auto;padding:5px 12px;font-size:12px">แสดง/ซ่อน</button>
+  </div>
+  <div id="payrep-col-list" style="display:none;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:16px;columns:2;column-gap:16px"></div>
+  <div style="height:8px"></div>
+
+  <!-- ปุ่มดูรายงาน -->
+  <div style="text-align:center;margin-bottom:20px">
+    <button class="btn p" id="payrep-run" onclick="payrepRun()" style="width:auto;padding:11px 32px">ดูรายงาน</button>
+  </div>
+
+  <!-- ผลลัพธ์ -->
+  <div id="payrep-result"></div>
+</div>
+
 <!-- ═══════════════ ส่ง Telegram แจ้งเงินเดือน ═══════════════ -->
 <div class="page" id="page-pay-telegram">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1367,7 +1420,7 @@ textarea.inp{resize:vertical;min-height:60px}
 
 <!-- ═══════════════ สลิปเงินเดือนพนักงาน (การ์ด) ═══════════════ -->
 <div class="page" id="page-my-payslip">
-  <h2 style="margin:0 0 16px;font-size:18px">สลิปเงินเดือนของฉัน</h2>
+  <h2 style="margin:0 0 16px;font-size:18px">สลิปเงินเดือน</h2>
   <div id="my-payslip-list"></div>
 </div>
 
@@ -1539,7 +1592,9 @@ function applyLogo() {
 function callAPI(action, payload, attempt, noRetry) {
   attempt = attempt || 1;
   const MAX_ATTEMPTS = noRetry ? 1 : 3;   // action ที่มี side-effect (ส่ง/ตั้งเวลา) ห้าม retry กันทำซ้ำ
-  const TIMEOUT_MS = 30000;   // GAS ตอบช้าได้ ให้เวลา 30 วิ
+  // backend ตอบจริงใน 3-6 วิ (จาก Executions log) — ถ้าเกิน 15 วิ = เครือข่าย/proxy สะดุด
+  // ตั้ง timeout สั้นลงเป็น 15 วิ เพื่อรีบ retry แทนการรอ 30 วิต่อรอบ (ลดเวลารวมเมื่อเครือข่ายช้า)
+  const TIMEOUT_MS = 15000;
 
   // timeout กัน fetch ค้างนานเกิน
   const controller = new AbortController();
@@ -1550,6 +1605,8 @@ function callAPI(action, payload, attempt, noRetry) {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: action, payload: payload || {} }),
     signal: controller.signal,
+    // ปิด cache กัน proxy บางตัวค้าง
+    cache: 'no-store',
   })
     .then(res => {
       clearTimeout(timer);
@@ -1569,8 +1626,8 @@ function callAPI(action, payload, attempt, noRetry) {
       // retry เมื่อยังไม่ครบจำนวน (timeout, network, หรือ response ไม่ใช่ JSON)
       // แต่ถ้า noRetry (action มี side-effect) จะไม่ retry เด็ดขาด
       if (!noRetry && attempt < MAX_ATTEMPTS) {
-        // หน่วงก่อนลองใหม่ (เพิ่มขึ้นตามรอบ) เพื่อให้ GAS หายสะดุด
-        const delay = 800 * attempt;
+        // หน่วงสั้นๆ ก่อนลองใหม่ (400ms, 800ms) — retry เร็วเพราะ backend เองเร็ว
+        const delay = 400 * attempt;
         return new Promise(resolve => setTimeout(resolve, delay))
           .then(() => callAPI(action, payload, attempt + 1, noRetry));
       }
@@ -1839,7 +1896,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','pay-telegram','my-payslip'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','pay-telegram','pay-report','my-payslip'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1887,6 +1944,7 @@ function go(id) {
   if (id === 'pay-periods')   { if (typeof loadPayPeriods === 'function') loadPayPeriods(); }
   if (id === 'pay-review')    { if (typeof loadPayReview === 'function') loadPayReview(); }
   if (id === 'pay-telegram')  { if (typeof loadPayTelegram === 'function') loadPayTelegram(); }
+  if (id === 'pay-report')    { if (typeof loadPayReport === 'function') loadPayReport(); }
   if (id === 'my-payslip')    { if (typeof loadMyPayslips === 'function') loadMyPayslips(); }
   if (id === 'hr-employees') {
     // เคลียร์ผลค้นหาเก่า
