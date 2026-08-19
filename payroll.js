@@ -586,6 +586,16 @@ function initPayrollBindings() {
   on('pay-review-back', 'click', () => go('pay-periods'));
   on('pay-genpdf-all-btn', 'click', () => payGenPDF(null, true));
   on('pay-genpdf-sel-btn', 'click', payGenPDFSelected);
+  on('pay-tg-btn', 'click', openPayTelegram);
+  on('paytg-back', 'click', () => go('pay-review'));
+  on('paytg-send-btn', 'click', doPayTgSend);
+  // ปุ่มเลือกโหมด/เวลา (delegate)
+  document.addEventListener('click', function(e) {
+    const modeBtn = e.target.closest && e.target.closest('.paytg-mode');
+    if (modeBtn) { PAYTG.mode = modeBtn.getAttribute('data-mode'); syncPayTgUI(); return; }
+    const timeBtn = e.target.closest && e.target.closest('.paytg-time');
+    if (timeBtn) { PAYTG.time = timeBtn.getAttribute('data-time'); syncPayTgUI(); return; }
+  });
   on('pay-upload-file', 'change', function(e) {
     const f = e.target.files && e.target.files[0];
     if (f) payHandleUpload(f);
@@ -643,4 +653,165 @@ function renderMyPayslips(slips) {
         <a href="${payEsc(s.url)}" target="_blank" class="btn p" style="display:block;text-align:center;text-decoration:none;margin-top:12px">📄 เปิดสลิป PDF</a>
       </div>
     </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+//  ส่ง Telegram แจ้งเงินเดือน (frontend)
+// ════════════════════════════════════════════════
+const PAYTG = { mode: 'all', time: 'now' };
+
+function openPayTelegram() {
+  if (!PAY.currentPeriod) { showToast('เลือกงวดก่อน'); return; }
+  go('pay-telegram');
+}
+
+function loadPayTelegram() {
+  const p = PAY.currentPeriod;
+  if (!p) { go('pay-review'); return; }
+  const info = document.getElementById('paytg-periodinfo');
+  if (info) info.innerHTML = `งวด <b>${payEsc(p.payRound || p.periodId)}</b> · จ่าย ${payEsc(payFmtDate(p.payDate))}`;
+  // reset สถานะ
+  PAYTG.mode = 'all'; PAYTG.time = 'now';
+  syncPayTgUI();
+  updatePayTgPreview();
+  loadPayTgList();
+  loadPayTgSchedules();
+  document.getElementById('paytg-send-status').textContent = '';
+}
+
+// ตัวอย่างข้อความ
+function updatePayTgPreview() {
+  const p = PAY.currentPeriod;
+  const box = document.getElementById('paytg-preview');
+  if (!box || !p) return;
+  box.textContent =
+    '💰 สลิปเงินเดือน\n\n' +
+    'รอบการจ่าย: ' + (p.payRound || p.periodId) + '\n' +
+    'วันที่จ่าย: ' + payFmtDate(p.payDate) + '\n' +
+    'รหัสพนักงาน: (รหัสของพนักงาน)\n' +
+    'ชื่อ: (ชื่อพนักงาน)\n' +
+    'เงินได้สุทธิ: (ยอดสุทธิ) บาท\n\n' +
+    'ดูรายละเอียดได้ที่เมนูสลิปเงินเดือนในระบบ';
+}
+
+// sync ปุ่มโหมด/เวลา + แสดง/ซ่อนส่วน
+function syncPayTgUI() {
+  document.querySelectorAll('.paytg-mode').forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === PAYTG.mode));
+  document.querySelectorAll('.paytg-time').forEach(b => b.classList.toggle('active', b.getAttribute('data-time') === PAYTG.time));
+  document.getElementById('paytg-list-wrap').style.display = (PAYTG.mode === 'select') ? '' : 'none';
+  document.getElementById('paytg-sched-box').style.display = (PAYTG.time === 'sched') ? '' : 'none';
+  const btn = document.getElementById('paytg-send-btn');
+  if (btn) btn.textContent = (PAYTG.time === 'sched') ? '⏰ ตั้งเวลาส่ง' : '📤 ส่ง Telegram';
+}
+
+// รายชื่อ (โหมดเลือกหลายคน) — ติ๊กได้เฉพาะคนมี PDF
+function loadPayTgList() {
+  const box = document.getElementById('paytg-list');
+  if (!box) return;
+  const rows = (PAY.rows || []).slice().sort((a, b) => String(a.empId).localeCompare(String(b.empId), undefined, { numeric: true }));
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr>
+      <th style="text-align:center;padding:10px 8px;background:var(--sf2)"><input type="checkbox" id="paytg-check-all"></th>
+      <th style="text-align:left;padding:10px 12px;font-size:12px;color:var(--tx2);background:var(--sf2)">รหัส</th>
+      <th style="text-align:left;padding:10px 12px;font-size:12px;color:var(--tx2);background:var(--sf2)">ชื่อ</th>
+      <th style="text-align:right;padding:10px 12px;font-size:12px;color:var(--tx2);background:var(--sf2)">สุทธิ</th>
+      <th style="text-align:center;padding:10px 12px;font-size:12px;color:var(--tx2);background:var(--sf2)">PDF</th>
+    </tr></thead><tbody>`;
+  html += rows.map(r => {
+    const hasPdf = !!r.urlPDF;
+    return `<tr style="${hasPdf ? '' : 'opacity:.5'}">
+      <td style="padding:10px 8px;border-top:1px solid var(--bd);text-align:center"><input type="checkbox" class="paytg-check" data-id="${payEsc(r.rowId)}" ${hasPdf ? '' : 'disabled'}></td>
+      <td style="padding:10px 12px;border-top:1px solid var(--bd)">${payEsc(r.empId)}</td>
+      <td style="padding:10px 12px;border-top:1px solid var(--bd);white-space:nowrap">${payEsc(r.name)}</td>
+      <td style="padding:10px 12px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums">${payMoney(r.net)}</td>
+      <td style="padding:10px 12px;border-top:1px solid var(--bd);text-align:center">${hasPdf ? '<span style="color:var(--ok)">มี</span>' : '<span style="color:var(--tx3)">ยังไม่มี</span>'}</td>
+    </tr>`;
+  }).join('');
+  html += `</tbody></table>
+    <div style="padding:11px 14px;font-size:12px;color:var(--tx3);border-top:1px solid var(--bd)">คนที่ยังไม่มี PDF ติ๊กไม่ได้ (ต้องสร้างสลิปก่อน)</div>`;
+  box.innerHTML = html;
+  const chkAll = document.getElementById('paytg-check-all');
+  if (chkAll) chkAll.addEventListener('change', () => {
+    box.querySelectorAll('.paytg-check:not([disabled])').forEach(c => { c.checked = chkAll.checked; });
+  });
+}
+
+// กำหนดการที่ตั้งไว้
+function loadPayTgSchedules() {
+  const p = PAY.currentPeriod;
+  const box = document.getElementById('paytg-sched-list');
+  if (!box || !p) return;
+  box.innerHTML = '<div style="color:var(--tx3);font-size:13px;padding:8px">กำลังโหลด...</div>';
+  gasRun('payGetScheduledSends', { hrToken: S.hrToken, periodId: p.periodId })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { box.innerHTML = ''; return; }
+      const list = r.schedules || [];
+      if (!list.length) { box.innerHTML = '<div style="color:var(--tx3);font-size:13px;padding:8px">ยังไม่มีกำหนดการ</div>'; return; }
+      box.innerHTML = list.map(s => {
+        const done = s.status === 'SENT';
+        const dot = done ? 'var(--ok)' : 'var(--wn)';
+        const label = s.rowIds === 'ALL' ? 'ส่งทั้งงวด' : ('เลือก ' + (s.rowIds ? s.rowIds.split(',').length : 0) + ' คน');
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:12px;margin-bottom:8px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${dot};flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-weight:600">${label} · ${payEsc(s.sendAt)}</div>
+            <div style="font-size:12px;color:var(--tx3)">${s.count} คน · ${done ? 'ส่งแล้ว ✓' : 'รอส่ง'}</div>
+          </div>
+          ${done ? '' : `<button class="btn o sm paytg-cancel" data-id="${payEsc(s.schedId)}" style="width:auto;padding:6px 14px">ยกเลิก</button>`}
+        </div>`;
+      }).join('');
+      box.querySelectorAll('.paytg-cancel').forEach(b => b.addEventListener('click', () => cancelPayTgSchedule(b.getAttribute('data-id'))));
+    })
+    .withFailureHandler(() => { box.innerHTML = ''; });
+}
+
+function cancelPayTgSchedule(schedId) {
+  if (!confirm('ยกเลิกกำหนดการนี้?')) return;
+  gasRun('payCancelSchedule', { hrToken: S.hrToken, schedId: schedId })
+    .withSuccessHandler(r => { showToast((r && r.message) || 'ยกเลิกแล้ว'); loadPayTgSchedules(); })
+    .withFailureHandler(() => showToast('ยกเลิกไม่สำเร็จ'));
+}
+
+// ส่ง / ตั้งเวลา
+function doPayTgSend() {
+  const p = PAY.currentPeriod;
+  if (!p) return;
+  const btn = document.getElementById('paytg-send-btn');
+  const status = document.getElementById('paytg-send-status');
+
+  // รวบรวม rowIds ถ้าโหมดเลือก
+  let rowIds = null;
+  if (PAYTG.mode === 'select') {
+    rowIds = Array.from(document.querySelectorAll('.paytg-check:checked')).map(c => c.getAttribute('data-id'));
+    if (!rowIds.length) { showToast('เลือกพนักงานก่อน'); return; }
+  }
+
+  if (btn) btn.disabled = true;
+
+  if (PAYTG.time === 'sched') {
+    // ตั้งเวลา
+    const at = document.getElementById('paytg-sched-at').value;
+    if (!at) { showToast('เลือกวันเวลาก่อน'); if (btn) btn.disabled = false; return; }
+    if (status) status.textContent = 'กำลังตั้งเวลา...';
+    gasRun('payTelegramSchedule', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds, sendAt: at })
+      .withSuccessHandler(r => {
+        if (btn) btn.disabled = false;
+        if (r && r.success) { if (status) status.textContent = '✓ ' + r.message; loadPayTgSchedules(); }
+        else if (status) status.textContent = '✗ ' + ((r && r.message) || 'ตั้งเวลาไม่สำเร็จ');
+      })
+      .withFailureHandler(() => { if (btn) btn.disabled = false; if (status) status.textContent = '✗ เกิดข้อผิดพลาด'; });
+  } else {
+    // ส่งทันที
+    if (status) status.textContent = 'กำลังส่ง...';
+    gasRun('payTelegramSendNow', { hrToken: S.hrToken, periodId: p.periodId, rowIds: rowIds })
+      .withSuccessHandler(r => {
+        if (btn) btn.disabled = false;
+        if (r && r.success) {
+          const rs = r.result || {};
+          if (status) status.textContent = `✓ ส่งแล้ว ${rs.sent} คน` + (rs.skipped ? ` · ข้าม ${rs.skipped} (ไม่มี PDF)` : '') + (rs.noChatId ? ` · ไม่มี Chat ID ${rs.noChatId}` : '');
+          loadPayReview();   // refresh สถานะส่งแล้ว
+        } else if (status) status.textContent = '✗ ' + ((r && r.message) || 'ส่งไม่สำเร็จ');
+      })
+      .withFailureHandler(() => { if (btn) btn.disabled = false; if (status) status.textContent = '✗ เกิดข้อผิดพลาด'; });
+  }
 }
