@@ -586,16 +586,7 @@ function initPayrollBindings() {
   on('pay-review-back', 'click', () => go('pay-periods'));
   on('pay-genpdf-all-btn', 'click', () => payGenPDF(null, true));
   on('pay-genpdf-sel-btn', 'click', payGenPDFSelected);
-  on('pay-tg-btn', 'click', openPayTelegram);
-  on('paytg-back', 'click', () => go('pay-review'));
-  on('paytg-send-btn', 'click', doPayTgSend);
-  // ปุ่มเลือกโหมด/เวลา (delegate)
-  document.addEventListener('click', function(e) {
-    const modeBtn = e.target.closest && e.target.closest('.paytg-mode');
-    if (modeBtn) { PAYTG.mode = modeBtn.getAttribute('data-mode'); syncPayTgUI(); return; }
-    const timeBtn = e.target.closest && e.target.closest('.paytg-time');
-    if (timeBtn) { PAYTG.time = timeBtn.getAttribute('data-time'); syncPayTgUI(); return; }
-  });
+  // ปุ่ม Telegram ใช้ onclick ตรงใน HTML (กัน timing binding พลาด)
   on('pay-upload-file', 'change', function(e) {
     const f = e.target.files && e.target.files[0];
     if (f) payHandleUpload(f);
@@ -658,7 +649,7 @@ function renderMyPayslips(slips) {
 // ════════════════════════════════════════════════
 //  ส่ง Telegram แจ้งเงินเดือน (frontend)
 // ════════════════════════════════════════════════
-const PAYTG = { mode: 'all', time: 'now' };
+window.PAYTG = window.PAYTG || { mode: 'all', time: 'now' };
 
 function openPayTelegram() {
   if (!PAY.currentPeriod) { showToast('เลือกงวดก่อน'); return; }

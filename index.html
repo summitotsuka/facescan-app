@@ -23,9 +23,9 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fn)}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);padding:0 16px}
-.nav-row1{height:48px;display:flex;align-items:center;justify-content:space-between}
-.nav-row2{display:flex;align-items:center;padding:0 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:10px}
+.nav-mid{flex:1;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nav-mid::-webkit-scrollbar{height:0}
 .logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
 .logo-icon{height:28px;min-width:28px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-size:13px;overflow:hidden}
 .nav-right{display:flex;align-items:center;gap:10px}
@@ -71,10 +71,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,
 .rep-bdg{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:600}
 .nav-clock{font-family:var(--mo);font-size:11px;color:var(--tx3)}
 
-.page{display:none;position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px calc(20px + var(--sab));z-index:1}
+.page{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px calc(20px + var(--sab));z-index:1}
 .page.active{display:block}
 #page-kiosk.active{display:flex}
-.page.with-strip{top:132px}
+.page.with-strip{top:96px}
 
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}
@@ -225,11 +225,8 @@ textarea.inp{resize:vertical;min-height:60px}
 <body>
 
 <nav>
-  <div class="nav-row1">
-    <div class="logo"><span style="font-size:16px;font-weight:700;color:var(--tx);white-space:nowrap">SOM HR System</span><span id="app-version" style="font-size:11px;color:var(--tx3);margin-left:6px"></span></div>
-    <div class="nav-clock" id="clock">--:--:--</div>
-  </div>
-  <div class="nav-row2">
+  <div class="logo"><span style="font-size:16px;font-weight:700;color:var(--tx);white-space:nowrap">SOM HR System</span><span id="app-version" style="font-size:11px;color:var(--tx3);margin-left:6px"></span></div>
+  <div class="nav-mid">
     <div class="nav-tabs" id="nav-tabs" style="display:none">
       <!-- เมนูพนักงาน -->
       <button class="nav-tab active" id="tab-in">เช็คอิน</button>
@@ -246,10 +243,11 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="nav-tab hr" id="tab-hr-dash" style="display:none">HR</button>
     </div>
   </div>
+  <div class="nav-clock" id="clock">--:--:--</div>
 </nav>
 
 <!-- Employee strip — แสดงหลัง login สำเร็จ -->
-<div id="emp-strip" style="display:none;background:var(--sf2);border-bottom:1px solid var(--bd);padding:8px 16px;align-items:center;gap:12px;position:fixed;top:88px;left:0;right:0;z-index:99">
+<div id="emp-strip" style="display:none;background:var(--sf2);border-bottom:1px solid var(--bd);padding:8px 16px;align-items:center;gap:12px;position:fixed;top:52px;left:0;right:0;z-index:99">
   <div id="emp-avatar" style="width:34px;height:34px;border-radius:50%;background:rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--ac);flex-shrink:0">—</div>
   <div style="flex:1;min-width:0">
     <div id="emp-name-strip" style="font-size:15px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
@@ -1280,7 +1278,7 @@ textarea.inp{resize:vertical;min-height:60px}
       </label>
       <button class="btn o sm" id="pay-genpdf-all-btn" style="width:auto;padding:8px 16px">📄 สร้าง PDF ทั้งงวด</button>
       <button class="btn o sm" id="pay-genpdf-sel-btn" style="width:auto;padding:8px 16px;display:none">📄 สร้าง PDF ที่เลือก (<span id="pay-sel-count">0</span>)</button>
-      <button class="btn o sm" id="pay-tg-btn" style="width:auto;padding:8px 16px">📤 ส่ง Telegram</button>
+      <button class="btn o sm" id="pay-tg-btn" onclick="if(typeof openPayTelegram==='function')openPayTelegram()" style="width:auto;padding:8px 16px">📤 ส่ง Telegram</button>
       <button class="btn o sm" id="pay-lock-btn" style="width:auto;padding:8px 16px">🔒 ปิดงวด</button>
     </div>
     <div id="pay-upload-status" style="font-size:13px;margin-top:8px;color:var(--tx3)"></div>
@@ -1318,7 +1316,7 @@ textarea.inp{resize:vertical;min-height:60px}
 <!-- ═══════════════ ส่ง Telegram แจ้งเงินเดือน ═══════════════ -->
 <div class="page" id="page-pay-telegram">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-    <button class="btn o sm" id="paytg-back" style="width:auto;padding:7px 14px">← กลับ</button>
+    <button class="btn o sm" id="paytg-back" onclick="go('pay-review')" style="width:auto;padding:7px 14px">← กลับ</button>
     <h2 style="margin:0;font-size:18px">ส่ง Telegram แจ้งเงินเดือน</h2>
   </div>
   <div id="paytg-periodinfo" style="font-size:14px;color:var(--tx2);margin-bottom:16px"></div>
@@ -1326,15 +1324,15 @@ textarea.inp{resize:vertical;min-height:60px}
   <!-- 1. เลือกวิธีส่ง -->
   <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:10px">1. เลือกวิธีส่ง</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" id="paytg-mode-row">
-    <button class="paytg-mode btn o sm active" data-mode="all" style="width:auto;padding:10px 18px">ส่งทั้งงวด</button>
-    <button class="paytg-mode btn o sm" data-mode="select" style="width:auto;padding:10px 18px">เลือกหลายคน</button>
+    <button class="paytg-mode btn o sm active" data-mode="all" onclick="PAYTG.mode='all';syncPayTgUI()" style="width:auto;padding:10px 18px">ส่งทั้งงวด</button>
+    <button class="paytg-mode btn o sm" data-mode="select" onclick="PAYTG.mode='select';syncPayTgUI()" style="width:auto;padding:10px 18px">เลือกหลายคน</button>
   </div>
 
   <!-- 2. เวลาส่ง -->
   <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:10px">2. เวลาส่ง</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="paytg-time-row">
-    <button class="paytg-time btn o sm active" data-time="now" style="width:auto;padding:10px 18px">📤 ส่งทันที</button>
-    <button class="paytg-time btn o sm" data-time="sched" style="width:auto;padding:10px 18px">⏰ ตั้งเวลาล่วงหน้า</button>
+    <button class="paytg-time btn o sm active" data-time="now" onclick="PAYTG.time='now';syncPayTgUI()" style="width:auto;padding:10px 18px">📤 ส่งทันที</button>
+    <button class="paytg-time btn o sm" data-time="sched" onclick="PAYTG.time='sched';syncPayTgUI()" style="width:auto;padding:10px 18px">⏰ ตั้งเวลาล่วงหน้า</button>
   </div>
   <div id="paytg-sched-box" style="display:none;background:var(--sf);border:1px dashed var(--bd2);border-radius:12px;padding:14px;margin-bottom:16px">
     <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--tx2)">วันและเวลาที่จะส่ง</label>
@@ -1353,7 +1351,7 @@ textarea.inp{resize:vertical;min-height:60px}
 
   <!-- ปุ่มส่ง -->
   <div style="text-align:center;margin-bottom:24px">
-    <button class="btn p" id="paytg-send-btn" style="width:auto;padding:11px 28px">📤 ส่ง Telegram</button>
+    <button class="btn p" id="paytg-send-btn" onclick="doPayTgSend()" style="width:auto;padding:11px 28px">📤 ส่ง Telegram</button>
     <div id="paytg-send-status" style="font-size:13px;margin-top:10px;color:var(--tx3)"></div>
   </div>
 
@@ -1822,11 +1820,7 @@ function go(id) {
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
   const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','pay-telegram','my-payslip'];
   const tabs = document.getElementById('nav-tabs');
-  const showTabs = navPages.includes(id);
-  if (tabs) tabs.style.display = showTabs ? 'flex' : 'none';
-  // ซ่อนแถวเมนู (row2) ทั้งแถวเมื่อไม่มีเมนู (เช่นหน้า login) เพื่อไม่ให้กินที่
-  const navRow2 = document.querySelector('.nav-row2');
-  if (navRow2) navRow2.style.display = showTabs ? 'flex' : 'none';
+  if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
   // sync tab highlight — หน้า HR ทั้งหมดให้แท็บ HR active
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active','co','ht'));
