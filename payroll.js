@@ -880,8 +880,11 @@ function renderPayrepCols(columns) {
     </label>`).join('');
 }
 function payrepToggleCols() {
-  const box = document.getElementById('payrep-col-list');
+  const box = document.getElementById('payrep-col-box');
   box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+}
+function payrepCheckAllCols(checked) {
+  document.querySelectorAll('.payrep-col-chk').forEach(c => { c.checked = checked; });
 }
 
 function payrepRun() {

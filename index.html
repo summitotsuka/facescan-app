@@ -1342,7 +1342,7 @@ textarea.inp{resize:vertical;min-height:60px}
   <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:8px">2. เลือกพนักงาน</div>
   <div style="display:flex;gap:8px;margin-bottom:8px">
     <button class="btn o sm payrep-escope active" data-scope="all" onclick="payrepSetEmpScope('all')" style="width:auto;padding:8px 16px">ทั้งหมด</button>
-    <button class="btn o sm payrep-escope" data-scope="pick" onclick="payrepSetEmpScope('pick')" style="width:auto;padding:8px 16px">เลือกคน</button>
+    <button class="btn o sm payrep-escope" data-scope="pick" onclick="payrepSetEmpScope('pick')" style="width:auto;padding:8px 16px">เลือกพนักงาน</button>
   </div>
   <div id="payrep-emp-box" style="display:none;margin-bottom:16px">
     <input type="text" id="payrep-emp-search" placeholder="ค้นหารหัส/ชื่อ..." oninput="payrepFilterEmp(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--bd2);border-radius:9px;font-family:var(--fn);font-size:14px;margin-bottom:8px">
@@ -1355,7 +1355,13 @@ textarea.inp{resize:vertical;min-height:60px}
     <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--tx2)">3. เลือกคอลัมน์ <span style="font-weight:400;color:var(--tx3)">(ไม่ติ๊ก = ทุกคอลัมน์)</span></div>
     <button class="btn o sm" onclick="payrepToggleCols()" id="payrep-col-toggle" style="width:auto;padding:5px 12px;font-size:12px">แสดง/ซ่อน</button>
   </div>
-  <div id="payrep-col-list" style="display:none;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:16px;columns:2;column-gap:16px"></div>
+  <div id="payrep-col-box" style="display:none;margin-bottom:16px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn o sm" onclick="payrepCheckAllCols(true)" style="width:auto;padding:6px 14px;font-size:12px">☑ ติ๊กทั้งหมด</button>
+      <button class="btn o sm" onclick="payrepCheckAllCols(false)" style="width:auto;padding:6px 14px;font-size:12px">☐ ล้างทั้งหมด</button>
+    </div>
+    <div id="payrep-col-list" style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px;columns:2;column-gap:16px"></div>
+  </div>
   <div style="height:8px"></div>
 
   <!-- ปุ่มดูรายงาน -->
