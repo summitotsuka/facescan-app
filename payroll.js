@@ -50,6 +50,16 @@ function loadPayPeriods() {
     .withFailureHandler(() => { if (box) box.innerHTML = '<div style="padding:20px;color:var(--er)">เกิดข้อผิดพลาด</div>'; });
 }
 
+function payDeletePeriodConfirm(periodId) {
+  if (!confirm('ลบงวด ' + periodId + ' ?\n(ลบได้เฉพาะงวดที่ยังไม่มีข้อมูลพนักงาน)')) return;
+  gasRunNoRetry('payDeletePeriod', { hrToken: S.hrToken, periodId: periodId })
+    .withSuccessHandler(r => {
+      if (r && r.success) { showToast('ลบงวดเรียบร้อย'); loadPayPeriods(); }
+      else showToast((r && r.message) || 'ลบไม่สำเร็จ');
+    })
+    .withFailureHandler(() => showToast('เกิดข้อผิดพลาด'));
+}
+
 function renderPayPeriods() {
   const box = document.getElementById('pay-periods-list');
   if (!box) return;
@@ -64,9 +74,11 @@ function renderPayPeriods() {
     const badge = isOpen
       ? '<span class="lv-badge" style="background:rgba(5,150,105,.1);color:var(--ok)">🟢 เปิดอยู่</span>'
       : '<span class="lv-badge" style="background:rgba(148,163,184,.15);color:var(--tx2)">🔒 ปิดแล้ว</span>';
+    const canDelete = isOpen && (payNum(p.headcount) === 0);
     const actions = isOpen
       ? `<button class="btn p sm pay-review-btn" data-id="${payEsc(p.periodId)}" style="width:auto;padding:6px 14px;font-size:13px">ตรวจสอบ/โหลด</button>
          <button class="btn o sm pay-lock2-btn" data-id="${payEsc(p.periodId)}" style="width:auto;padding:6px 14px;font-size:13px">🔒 ปิดงวด</button>`
+         + (canDelete ? `<button class="btn o sm pay-delperiod-btn" data-id="${payEsc(p.periodId)}" style="width:auto;padding:6px 14px;font-size:13px;color:var(--er);border-color:var(--er)">🗑 ลบงวด</button>` : '')
       : `<button class="btn o sm pay-review-btn" data-id="${payEsc(p.periodId)}" style="width:auto;padding:6px 14px;font-size:13px">ดูข้อมูล</button>
          <button class="btn o sm pay-unlock-btn" data-id="${payEsc(p.periodId)}" style="width:auto;padding:6px 14px;font-size:13px">🔓 เปิดงวด</button>`;
     return `<div class="lv-card" style="display:flex;align-items:flex-start;gap:12px">
@@ -85,6 +97,7 @@ function renderPayPeriods() {
   box.querySelectorAll('.pay-review-btn').forEach(b => b.addEventListener('click', () => openPayReview(b.getAttribute('data-id'))));
   box.querySelectorAll('.pay-lock2-btn').forEach(b => b.addEventListener('click', () => paySetStatus(b.getAttribute('data-id'), 'LOCKED')));
   box.querySelectorAll('.pay-unlock-btn').forEach(b => b.addEventListener('click', () => paySetStatus(b.getAttribute('data-id'), 'OPEN')));
+  box.querySelectorAll('.pay-delperiod-btn').forEach(b => b.addEventListener('click', () => payDeletePeriodConfirm(b.getAttribute('data-id'))));
 }
 
 // สร้างงวด

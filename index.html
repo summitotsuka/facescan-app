@@ -714,9 +714,9 @@ textarea.inp{resize:vertical;min-height:60px}
     </div>
   </div>
 
-  <!-- ผลลัพธ์ค้นหา / ฟอร์มแก้ไข -->
-  <div id="hremp-result" style="display:none">
-    <div class="card" style="padding:16px">
+  <!-- ผลลัพธ์ค้นหา / ฟอร์มแก้ไข (เรียงการ์ด: คีย์เวลา → แก้ไขประวัติ → จัดการบัญชี) -->
+  <div id="hremp-result" style="display:none;flex-direction:column">
+    <div class="card" style="padding:16px;order:2">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <div>
           <div id="hremp-title" style="font-size:15px;font-weight:600">—</div>
@@ -751,6 +751,12 @@ textarea.inp{resize:vertical;min-height:60px}
         </select></div>
       <div class="field"><label>Payroll_ID (รหัสเงินเดือน)</label>
         <input class="inp" id="hremp-f-payrollid" placeholder="รหัสในโปรแกรมเงินเดือน"></div>
+      <div class="field"><label>ผู้อนุมัติขั้น 1 (รหัสหัวหน้าแผนก)</label>
+        <input class="inp" id="hremp-f-approverl1" placeholder="เช่น 501001 (เว้นว่าง = ข้ามขั้น)" style="text-transform:uppercase"></div>
+      <div class="field"><label>ผู้อนุมัติขั้น 2 (รหัสผู้จัดการฝ่าย)</label>
+        <input class="inp" id="hremp-f-approverl2" placeholder="เช่น 501002 (เว้นว่าง = ข้ามขั้น)" style="text-transform:uppercase"></div>
+      <div class="field"><label>Telegram Chat ID</label>
+        <input class="inp" id="hremp-f-telegramid" placeholder="สำหรับแจ้งเตือน (เว้นว่างได้)" inputmode="numeric"></div>
       <div class="field"><label>สิทธิ์ (Role)</label>
         <input class="inp" id="hremp-f-role" disabled style="opacity:.6">
         <div style="font-size:10px;color:var(--tx3);margin-top:4px">แก้สิทธิ์ HR ได้ที่ Google Sheet เท่านั้น (เพื่อความปลอดภัย)</div></div>
@@ -758,8 +764,8 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="btn p" id="hremp-save" style="margin-top:6px">บันทึกข้อมูล</button>
     </div>
 
-    <!-- ปุ่มจัดการพิเศษ (เฉพาะตอนแก้ไขคนที่มีอยู่) -->
-    <div class="card" id="hremp-actions" style="padding:14px">
+    <!-- ปุ่มจัดการพิเศษ (เฉพาะตอนแก้ไขคนที่มีอยู่) — การ์ดที่ 4 (ท้ายสุด) -->
+    <div class="card" id="hremp-actions" style="padding:14px;order:3">
       <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">จัดการบัญชี</div>
       <div style="display:grid;gap:8px">
         <button class="btn o" id="hremp-reset-device">รีเซ็ต Device (เปลี่ยนมือถือ)</button>
@@ -768,8 +774,8 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
     </div>
 
-    <!-- B4: Manual Entry คีย์เวลาย้อนหลัง -->
-    <div class="card" id="hremp-manual" style="padding:14px">
+    <!-- B4: Manual Entry คีย์เวลาย้อนหลัง — การ์ดที่ 2 (ก่อนแก้ไขประวัติ) -->
+    <div class="card" id="hremp-manual" style="padding:14px;order:1">
       <div style="font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500">คีย์เวลาย้อนหลัง (Manual Entry)</div>
       <div style="font-size:11px;color:var(--tx3);margin-bottom:12px;line-height:1.5">สำหรับพนักงานที่ออกนอกสถานที่ หรือลืมเช็คอิน/เอาต์ — ถ้าคีย์ IN ให้คนที่มี "ยังไม่เช็คอิน" ระบบจะจับคู่และคำนวณชั่วโมงให้อัตโนมัติ</div>
       <div class="field"><label>วันที่</label>
@@ -2981,7 +2987,7 @@ function hrSearchEmployee() {
 
 function fillEmployeeForm(emp, mode) {
   hremp_mode = mode;
-  document.getElementById('hremp-result').style.display = 'block';
+  document.getElementById('hremp-result').style.display = 'flex';
   document.getElementById('hremp-notfound').style.display = 'none';
 
   // โหมด edit = มีคนอยู่แล้ว, add = เพิ่มใหม่
@@ -3026,6 +3032,9 @@ function fillEmployeeForm(emp, mode) {
   document.getElementById('hremp-f-startdate').value  = emp.startDate ? thaiDateDisplay(emp.startDate) : '';
   document.getElementById('hremp-f-shift').value      = emp.shift || 'A';
   document.getElementById('hremp-f-payrollid').value  = emp.payrollId || '';
+  document.getElementById('hremp-f-approverl1').value = emp.approverL1 || '';
+  document.getElementById('hremp-f-approverl2').value = emp.approverL2 || '';
+  document.getElementById('hremp-f-telegramid').value = emp.telegramId || '';
   document.getElementById('hremp-f-role').value       = emp.role || 'EMPLOYEE';
 
   // toggle status button label
@@ -3053,6 +3062,9 @@ function hrCollectFields() {
     startDate:  document.getElementById('hremp-f-startdate').value.trim(),
     shift:      document.getElementById('hremp-f-shift').value,
     payrollId:  document.getElementById('hremp-f-payrollid').value.trim(),
+    approverL1: document.getElementById('hremp-f-approverl1').value.trim(),
+    approverL2: document.getElementById('hremp-f-approverl2').value.trim(),
+    telegramId: document.getElementById('hremp-f-telegramid').value.trim(),
   };
 }
 
