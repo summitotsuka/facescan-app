@@ -48,8 +48,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(
 .hd-b-late{background:rgba(217,119,6,.12);color:var(--wn)}
 .hd-b-noout{background:rgba(220,38,38,.1);color:var(--er)}
 .hd-b-present{background:rgba(5,150,105,.12);color:var(--ok)}
-.hd-name{font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hd-meta{font-size:10px;color:var(--tx3);margin-top:1px}
+.hd-name{font-size:15px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-meta{font-size:13px;color:var(--tx3);margin-top:2px}
 .hd-times{font-family:var(--mo);font-size:11px;color:var(--tx2);text-align:right;flex-shrink:0;line-height:1.5}
 .hd-card{padding:14px;text-align:center;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;cursor:pointer;transition:all .15s}
 .hd-card:active{transform:scale(.97)}
@@ -906,6 +906,30 @@ textarea.inp{resize:vertical;min-height:60px}
     <button class="btn o sm" id="hrrep-delete" style="width:auto;padding:6px 16px;color:var(--er);border-color:var(--er)">ล้างข้อมูลช่วงนี้</button>
   </div>
 
+  <!-- ลบอัตโนมัติ (ตั้งเวลา + archive) -->
+  <div class="card" id="hr-autodel-card" style="padding:14px;margin-top:16px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px">⏰ ลบข้อมูลอัตโนมัติ</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:12px">ย้ายข้อมูลเก่าไปเก็บที่ชีต Attendance_Archive แล้วลบออกจากตารางหลัก ทำงานอัตโนมัติทุกคืน (ตี 1-2 น.)</div>
+
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer">
+      <input type="checkbox" id="hr-autodel-enabled" style="width:18px;height:18px">
+      <span style="font-size:14px;font-weight:600">เปิดการลบอัตโนมัติ</span>
+    </label>
+
+    <div class="field" style="margin-bottom:12px">
+      <label>เก็บข้อมูลย้อนหลัง (วัน)</label>
+      <input class="inp" id="hr-autodel-days" type="number" min="90" value="180" inputmode="numeric" style="max-width:160px">
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">ขั้นต่ำ 90 วัน · ข้อมูลเก่ากว่านี้จะถูกย้ายไป archive</div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn p sm" id="hr-autodel-save" style="width:auto;padding:8px 18px">บันทึกการตั้งค่า</button>
+      <button class="btn o sm" id="hr-autodel-runnow" style="width:auto;padding:8px 16px">ทดสอบลบตอนนี้</button>
+    </div>
+
+    <div id="hr-autodel-status" style="font-size:12px;color:var(--tx3);margin-top:10px"></div>
+  </div>
+
   <!-- ผลลัพธ์ -->
   <div id="hrrep-result" style="display:none">
     <!-- สรุป -->
@@ -946,13 +970,13 @@ textarea.inp{resize:vertical;min-height:60px}
   <button id="hrhol-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
 
   <div style="margin-bottom:14px">
-    <div style="font-size:17px;font-weight:600">จัดการวันหยุด</div>
-    <div style="font-size:12px;color:var(--tx3);margin-top:2px">วันหยุดนักขัตฤกษ์/พิเศษ (วันอาทิตย์ระบบตัดให้อัตโนมัติ)</div>
+    <div style="font-size:20px;font-weight:700">จัดการวันหยุด</div>
+    <div style="font-size:13px;color:var(--tx3);margin-top:2px">วันหยุดนักขัตฤกษ์/พิเศษ (วันอาทิตย์ระบบตัดให้อัตโนมัติ)</div>
   </div>
 
   <!-- เพิ่มวันหยุด -->
   <div class="card" style="padding:14px">
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;font-weight:500">เพิ่มวันหยุด</div>
+    <div style="font-size:14px;color:var(--tx2);margin-bottom:10px;font-weight:700">เพิ่มวันหยุด</div>
     <div class="field"><label>วันที่</label>
       <input class="inp" id="hrhol-date" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
     <div class="field"><label>ชื่อวันหยุด</label>
@@ -960,8 +984,11 @@ textarea.inp{resize:vertical;min-height:60px}
     <button class="btn p" id="hrhol-add" style="margin-top:6px">+ เพิ่มวันหยุด</button>
   </div>
 
-  <!-- รายการวันหยุด -->
-  <div style="font-size:12px;color:var(--tx2);margin:14px 2px 8px;font-weight:500">รายการวันหยุด (<span id="hrhol-count">0</span> วัน)</div>
+  <!-- รายการวันหยุด + เลือกปี -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 2px 8px;gap:10px">
+    <div style="font-size:14px;color:var(--tx2);font-weight:700">รายการวันหยุด (<span id="hrhol-count">0</span> วัน)</div>
+    <select id="hrhol-year" style="padding:7px 12px;border:1px solid var(--bd2);border-radius:9px;font-family:var(--fn);font-size:14px;background:var(--sf)"></select>
+  </div>
   <div id="hrhol-loading" style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">กำลังโหลด...</div>
   <div id="hrhol-list"></div>
 </div>
@@ -1930,6 +1957,7 @@ function go(id) {
   }
   if (id === 'hr-export') {
     loadExportPage();
+    if (typeof loadAutoDeleteConfig === 'function') loadAutoDeleteConfig();
   }
   if (id === 'hr-report') {
     loadReportPage();
@@ -2356,6 +2384,53 @@ function hrRepGenerate() {
 }
 
 // ── ล้างข้อมูลการลงเวลาตามช่วงวันที่ (2 ขั้น: เตือนสำรอง → พิมพ์ YES) ──
+// ── ลบอัตโนมัติ: โหลด/บันทึก/ทดสอบ ──
+function loadAutoDeleteConfig() {
+  gasRun('hrGetAutoDeleteConfig', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) return;
+      const en = document.getElementById('hr-autodel-enabled');
+      const days = document.getElementById('hr-autodel-days');
+      const st = document.getElementById('hr-autodel-status');
+      if (en) en.checked = !!r.enabled;
+      if (days) { days.value = r.keepDays || 180; days.min = r.minDays || 90; }
+      if (st) {
+        st.textContent = r.lastRun
+          ? `ลบล่าสุด: ${r.lastRun} (${r.lastCount || 0} แถว)`
+          : 'ยังไม่เคยลบอัตโนมัติ';
+      }
+    })
+    .withFailureHandler(() => {});
+}
+
+function hrAutoDelSave() {
+  const enabled = document.getElementById('hr-autodel-enabled').checked;
+  const keepDays = parseInt(document.getElementById('hr-autodel-days').value, 10);
+  const btn = document.getElementById('hr-autodel-save');
+  if (enabled && (!keepDays || keepDays < 90)) { showToast('จำนวนวันต้องไม่น้อยกว่า 90'); return; }
+  if (btn) btn.disabled = true;
+  gasRunNoRetry('hrSaveAutoDeleteConfig', { hrToken: S.hrToken, enabled: enabled, keepDays: keepDays })
+    .withSuccessHandler(r => {
+      if (btn) btn.disabled = false;
+      showToast((r && r.message) || (r && r.success ? 'บันทึกแล้ว' : 'บันทึกไม่สำเร็จ'));
+      loadAutoDeleteConfig();
+    })
+    .withFailureHandler(() => { if (btn) btn.disabled = false; showToast('เกิดข้อผิดพลาด'); });
+}
+
+function hrAutoDelRunNow() {
+  if (!confirm('ทดสอบลบตอนนี้?\nข้อมูลเก่ากว่าจำนวนวันที่ตั้งไว้จะถูกย้ายไป Attendance_Archive แล้วลบออกจากตารางหลัก')) return;
+  const btn = document.getElementById('hr-autodel-runnow');
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังลบ...'; }
+  gasRunNoRetry('hrRunAutoDeleteNow', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (btn) { btn.disabled = false; btn.textContent = 'ทดสอบลบตอนนี้'; }
+      showToast((r && r.message) || 'เสร็จ');
+      loadAutoDeleteConfig();
+    })
+    .withFailureHandler(() => { if (btn) { btn.disabled = false; btn.textContent = 'ทดสอบลบตอนนี้'; } showToast('เกิดข้อผิดพลาด'); });
+}
+
 function hrRepDelete() {
   const fromISO = document.getElementById('hrrep-from').value.trim();
   const toISO   = document.getElementById('hrrep-to').value.trim();
@@ -2490,6 +2565,8 @@ function loadHolidayPage() {
     .withFailureHandler(e => { document.getElementById('hrhol-loading').style.display = 'none'; showToast(e.message); });
 }
 
+let HOL_ALL = [];   // เก็บวันหยุดทั้งหมด (ไว้กรองตามปี)
+
 function renderHolidays(r) {
   document.getElementById('hrhol-loading').style.display = 'none';
   if (!r || !r.success) {
@@ -2497,15 +2574,38 @@ function renderHolidays(r) {
     if (r && r.authError) setTimeout(() => logout(), 1500);
     return;
   }
-  const holidays = r.holidays || [];
-  document.getElementById('hrhol-count').textContent = holidays.length;
+  // เรียงตามวันที่ (เก่า→ใหม่)
+  HOL_ALL = (r.holidays || []).slice().sort((a, b) => (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)));
+
+  // สร้าง dropdown ปี (พ.ศ.) จากข้อมูล — ใหม่สุดก่อน + ตัวเลือก "ทุกปี"
+  const years = Array.from(new Set(HOL_ALL.map(h => h.date.split('-')[0]))).sort().reverse();
+  const sel = document.getElementById('hrhol-year');
+  const cur = sel.value;   // จำค่าที่เลือกไว้
+  let opts = '<option value="">ทุกปี</option>';
+  years.forEach(y => { opts += `<option value="${y}">${(+y) + 543}</option>`; });
+  sel.innerHTML = opts;
+  // เลือกปีล่าสุดเป็นค่าเริ่มต้น (ถ้ายังไม่เคยเลือก) หรือคงค่าเดิม
+  if (cur && (cur === '' || years.indexOf(cur) !== -1)) sel.value = cur;
+  else if (years.length) sel.value = years[0];
+
+  sel.onchange = renderHolidayList;
+  renderHolidayList();
+}
+
+function renderHolidayList() {
+  const sel = document.getElementById('hrhol-year');
+  const year = sel ? sel.value : '';
   const list = document.getElementById('hrhol-list');
-  if (holidays.length === 0) {
+  const shown = year ? HOL_ALL.filter(h => h.date.split('-')[0] === year) : HOL_ALL;
+
+  document.getElementById('hrhol-count').textContent = shown.length;
+
+  if (shown.length === 0) {
     list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--tx3);font-size:13px">ยังไม่มีวันหยุด</div>';
     return;
   }
   let html = '';
-  holidays.forEach(h => {
+  shown.forEach(h => {
     const [y, m, d] = h.date.split('-');
     const thDate = `${d}/${m}/${(+y)+543}`;
     html += `<div class="hd-row">
@@ -3687,6 +3787,8 @@ applyLogo();
   on('hrrep-none', 'click', hrRepClearAll);
   on('hrrep-generate', 'click', hrRepGenerate);
   on('hrrep-delete', 'click', hrRepDelete);
+  on('hr-autodel-save', 'click', hrAutoDelSave);
+  on('hr-autodel-runnow', 'click', hrAutoDelRunNow);
   on('hrrep-csv', 'click', hrRepDownloadCSV);
   on('hrrep-pdf', 'click', hrRepDownloadPDF);
   document.querySelectorAll('.rep-stat').forEach(function(b) {

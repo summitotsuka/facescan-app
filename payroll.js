@@ -811,7 +811,11 @@ function doPayTgSend() {
         if (btn) btn.disabled = false;
         if (r && r.success) {
           const rs = r.result || {};
-          if (status) status.textContent = `✓ ส่งแล้ว ${rs.sent} คน` + (rs.skipped ? ` · ข้าม ${rs.skipped} (ไม่มี PDF)` : '') + (rs.noChatId ? ` · ไม่มี Chat ID ${rs.noChatId}` : '');
+          let msg = `✓ เปิดให้ดูสลิป ${rs.opened || 0} คน`;
+          msg += ` · ส่ง Telegram สำเร็จ ${rs.sent || 0} คน`;
+          if (rs.noChatId) msg += ` · ไม่มี Telegram ID ${rs.noChatId} คน`;
+          if (rs.skipped) msg += ` · ข้าม ${rs.skipped} (ไม่มี PDF)`;
+          if (status) status.textContent = msg;
           loadPayReview();   // refresh สถานะส่งแล้ว
         } else if (status) status.textContent = '✗ ' + ((r && r.message) || 'ส่งไม่สำเร็จ');
       })
