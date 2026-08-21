@@ -185,7 +185,7 @@ select.inp option{background:var(--sf2)}
 .btn.p{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
 .btn.d{background:linear-gradient(135deg,var(--er),#dc2626);color:#fff}
 .btn.o{background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2)}
-.paytg-mode.active,.paytg-time.active,.payrep-pscope.active,.payrep-escope.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
+.paytg-mode.active,.paytg-time.active,.payrep-pscope.active,.payrep-escope.active,.bc-target.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
 .btn.sm{width:auto;padding:8px 16px;font-size:12px;border-radius:8px;margin-bottom:0}
 
 .empid-box{background:var(--sf2);border:1px solid rgba(16,185,129,.3);border-radius:14px;padding:24px;text-align:center;margin:16px 0}
@@ -261,7 +261,7 @@ textarea.inp{resize:vertical;min-height:60px}
   <div style="text-align:center;padding:28px 0 20px">
     <div data-logo-hero style="width:60px;height:60px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px">W</div>
     <div style="font-size:24px;font-weight:600">Summit Otsuka Manufacturing Co., Ltd.</div>
-    <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบลงเวลาเข้า-ออกงาน</div>
+    <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบงานบุคคล</div>
   </div>
 
   <div class="card">
@@ -565,6 +565,24 @@ textarea.inp{resize:vertical;min-height:60px}
       <div style="flex:1">
         <div class="hr-menu-title">Export ข้อมูลเวลา</div>
         <div class="hr-menu-desc">ดาวน์โหลดข้อมูลชั่วโมงทำงานตามช่วงเวลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-datamgmt">
+      <div class="hr-menu-icon" style="background:rgba(100,116,139,.15);color:var(--tx2)">🗄</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">จัดการข้อมูลเวลา</div>
+        <div class="hr-menu-desc">ลบข้อมูลเก่า/ตั้งลบอัตโนมัติ + สำรองไป archive</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-broadcast">
+      <div class="hr-menu-icon" style="background:rgba(37,99,235,.15);color:var(--ac)">📢</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">ส่งข้อความ Telegram</div>
+        <div class="hr-menu-desc">ประกาศ/แจ้งข่าวถึงพนักงานผ่าน Telegram</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -899,37 +917,6 @@ textarea.inp{resize:vertical;min-height:60px}
 
   <button class="btn p" id="hrrep-generate" style="margin-bottom:10px">สร้างรายงาน</button>
 
-  <!-- โซนอันตราย: ล้างข้อมูลเก่า -->
-  <div class="card" style="padding:14px;margin-top:16px;border:1px solid rgba(220,38,38,.3)">
-    <div style="font-size:13px;font-weight:600;color:var(--er);margin-bottom:4px">⚠️ ล้างข้อมูลการลงเวลา</div>
-    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">ลบข้อมูลตามช่วงวันที่ที่เลือกด้านบน เพื่อไม่ให้ฐานข้อมูลใหญ่เกินไป — ลบแล้วกู้คืนไม่ได้</div>
-    <button class="btn o sm" id="hrrep-delete" style="width:auto;padding:6px 16px;color:var(--er);border-color:var(--er)">ล้างข้อมูลช่วงนี้</button>
-  </div>
-
-  <!-- ลบอัตโนมัติ (ตั้งเวลา + archive) -->
-  <div class="card" id="hr-autodel-card" style="padding:14px;margin-top:16px">
-    <div style="font-size:14px;font-weight:700;margin-bottom:4px">⏰ ลบข้อมูลอัตโนมัติ</div>
-    <div style="font-size:12px;color:var(--tx3);margin-bottom:12px">ย้ายข้อมูลเก่าไปเก็บที่ชีต Attendance_Archive แล้วลบออกจากตารางหลัก ทำงานอัตโนมัติทุกคืน (ตี 1-2 น.)</div>
-
-    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer">
-      <input type="checkbox" id="hr-autodel-enabled" style="width:18px;height:18px">
-      <span style="font-size:14px;font-weight:600">เปิดการลบอัตโนมัติ</span>
-    </label>
-
-    <div class="field" style="margin-bottom:12px">
-      <label>เก็บข้อมูลย้อนหลัง (วัน)</label>
-      <input class="inp" id="hr-autodel-days" type="number" min="90" value="180" inputmode="numeric" style="max-width:160px">
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">ขั้นต่ำ 90 วัน · ข้อมูลเก่ากว่านี้จะถูกย้ายไป archive</div>
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <button class="btn p sm" id="hr-autodel-save" style="width:auto;padding:8px 18px">บันทึกการตั้งค่า</button>
-      <button class="btn o sm" id="hr-autodel-runnow" style="width:auto;padding:8px 16px">ทดสอบลบตอนนี้</button>
-    </div>
-
-    <div id="hr-autodel-status" style="font-size:12px;color:var(--tx3);margin-top:10px"></div>
-  </div>
-
   <!-- ผลลัพธ์ -->
   <div id="hrrep-result" style="display:none">
     <!-- สรุป -->
@@ -966,6 +953,94 @@ textarea.inp{resize:vertical;min-height:60px}
 </div>
 
 <!-- ═══════════════ HR จัดการวันหยุด ═══════════════ -->
+<div class="page" id="page-hr-broadcast">
+  <button id="hrbc-back" onclick="go('hr-dash')" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:20px;font-weight:700">ส่งข้อความ Telegram</div>
+    <div style="font-size:13px;color:var(--tx3);margin-top:2px">ส่งประกาศ/แจ้งข่าวถึงพนักงานผ่าน Telegram (บอตเงินเดือน)</div>
+  </div>
+
+  <!-- 1. ส่งถึงใคร -->
+  <div style="font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--tx2);margin-bottom:8px">1. ส่งถึงใคร</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <button class="btn o sm bc-target active" data-target="all" onclick="bcSetTarget('all')" style="width:auto;padding:9px 18px">ทุกคน</button>
+    <button class="btn o sm bc-target" data-target="dept" onclick="bcSetTarget('dept')" style="width:auto;padding:9px 18px">เลือกแผนก</button>
+    <button class="btn o sm bc-target" data-target="pick" onclick="bcSetTarget('pick')" style="width:auto;padding:9px 18px">รายคน</button>
+  </div>
+
+  <!-- เลือกแผนก -->
+  <div id="bc-dept-box" style="display:none;margin-bottom:14px">
+    <select id="bc-dept-select" style="width:100%;padding:10px 12px;border:1px solid var(--bd2);border-radius:9px;font-family:var(--fn);font-size:14px;background:var(--sf)"></select>
+  </div>
+
+  <!-- เลือกรายคน -->
+  <div id="bc-pick-box" style="display:none;margin-bottom:14px">
+    <input type="text" id="bc-emp-search" placeholder="ค้นหารหัส/ชื่อ..." oninput="bcFilterEmp(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--bd2);border-radius:9px;font-family:var(--fn);font-size:14px;margin-bottom:8px">
+    <div id="bc-emp-list" style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px;max-height:220px;overflow-y:auto"></div>
+  </div>
+
+  <div id="bc-recipient-count" style="font-size:13px;color:var(--tx3);margin-bottom:16px"></div>
+
+  <!-- 2. ข้อความ -->
+  <div style="font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--tx2);margin-bottom:8px">2. ข้อความ</div>
+  <textarea id="bc-message" placeholder="พิมพ์ข้อความประกาศที่นี่..." oninput="bcUpdateCount()" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--bd2);border-radius:10px;font-family:var(--fn);font-size:14px;line-height:1.6;resize:vertical"></textarea>
+  <div style="font-size:12px;color:var(--tx3);margin:4px 2px 16px;text-align:right"><span id="bc-charcount">0</span>/4000</div>
+
+  <!-- 3. ส่ง -->
+  <div style="text-align:center;margin-bottom:16px">
+    <button class="btn p" id="bc-send-btn" onclick="bcSend()" style="width:auto;padding:12px 36px">📢 ส่งข้อความ</button>
+  </div>
+  <div id="bc-status" style="font-size:14px;text-align:center;color:var(--tx2)"></div>
+</div>
+
+<div class="page" id="page-hr-datamgmt">
+  <button id="hrdm-back" onclick="go('hr-dash')" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:20px;font-weight:700">จัดการข้อมูลเวลา</div>
+    <div style="font-size:13px;color:var(--tx3);margin-top:2px">ดูแล/ล้างข้อมูลการลงเวลา เพื่อไม่ให้ฐานข้อมูลใหญ่เกินไป</div>
+  </div>
+
+  <!-- ลบอัตโนมัติ (ตั้งเวลา + archive) -->
+  <div class="card" id="hr-autodel-card" style="padding:14px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px">⏰ ลบข้อมูลอัตโนมัติ</div>
+    <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">ย้ายข้อมูลเก่าไปเก็บที่ชีต Attendance_Archive แล้วลบออกจากตารางหลัก ทำงานอัตโนมัติทุกคืน (ตี 1-2 น.)</div>
+
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer">
+      <input type="checkbox" id="hr-autodel-enabled" style="width:18px;height:18px">
+      <span style="font-size:14px;font-weight:600">เปิดการลบอัตโนมัติ</span>
+    </label>
+
+    <div class="field" style="margin-bottom:12px">
+      <label>เก็บข้อมูลย้อนหลัง (วัน)</label>
+      <input class="inp" id="hr-autodel-days" type="number" min="90" value="180" inputmode="numeric" style="max-width:160px">
+      <div style="font-size:12px;color:var(--tx3);margin-top:4px">ขั้นต่ำ 90 วัน · ข้อมูลเก่ากว่านี้จะถูกย้ายไป archive</div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn p sm" id="hr-autodel-save" style="width:auto;padding:8px 18px">บันทึกการตั้งค่า</button>
+      <button class="btn o sm" id="hr-autodel-runnow" style="width:auto;padding:8px 16px">ทดสอบลบตอนนี้</button>
+    </div>
+
+    <div id="hr-autodel-status" style="font-size:13px;color:var(--tx3);margin-top:10px"></div>
+  </div>
+
+  <!-- โซนอันตราย: ลบตามช่วงวันที่ (manual) -->
+  <div class="card" style="padding:14px;margin-top:16px;border:1px solid rgba(220,38,38,.3)">
+    <div style="font-size:15px;font-weight:700;color:var(--er);margin-bottom:4px">⚠️ ลบข้อมูลตามช่วงวันที่</div>
+    <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">ลบข้อมูลการลงเวลาตามช่วงวันที่ที่ระบุ — ลบแล้วกู้คืนไม่ได้ (ไม่ย้ายไป archive)</div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="field" style="flex:1;min-width:130px;margin:0"><label>ตั้งแต่วันที่</label>
+        <input class="inp" id="hrdm-from" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+      <div class="field" style="flex:1;min-width:130px;margin:0"><label>ถึงวันที่</label>
+        <input class="inp" id="hrdm-to" placeholder="วว/ดด/ปปปป" inputmode="numeric" maxlength="10"></div>
+    </div>
+    <button class="btn o sm" id="hrdm-delete" style="width:auto;padding:8px 16px;color:var(--er);border-color:var(--er)">ลบข้อมูลช่วงนี้</button>
+  </div>
+</div>
+
 <div class="page" id="page-hr-holiday">
   <button id="hrhol-back" style="background:none;border:none;color:var(--tx2);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;font-family:var(--fn)">← กลับเมนู HR</button>
 
@@ -1935,7 +2010,7 @@ function go(id) {
   target.classList.add('active');
 
   // หน้าที่แสดง nav-tabs: เมนูพนักงาน + หน้า HR
-  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','pay-telegram','pay-report','my-payslip'];
+  const navPages = ['checkin','checkout','history','hr-dash','hr-dashboard','hr-employees','hr-export','hr-broadcast','hr-datamgmt','hr-report','hr-holiday','hr-face','leave-form','leave-history','leave-approve','leave-report','finger','ot-form','ot-history','ot-approve','ot-report','pay-periods','pay-review','pay-telegram','pay-report','my-payslip'];
   const tabs = document.getElementById('nav-tabs');
   if (tabs) tabs.style.display = navPages.includes(id) ? 'flex' : 'none';
 
@@ -1957,7 +2032,12 @@ function go(id) {
   }
   if (id === 'hr-export') {
     loadExportPage();
+  }
+  if (id === 'hr-datamgmt') {
     if (typeof loadAutoDeleteConfig === 'function') loadAutoDeleteConfig();
+  }
+  if (id === 'hr-broadcast') {
+    if (typeof loadBroadcast === 'function') loadBroadcast();
   }
   if (id === 'hr-report') {
     loadReportPage();
@@ -2431,13 +2511,127 @@ function hrAutoDelRunNow() {
     .withFailureHandler(() => { if (btn) { btn.disabled = false; btn.textContent = 'ทดสอบลบตอนนี้'; } showToast('เกิดข้อผิดพลาด'); });
 }
 
-function hrRepDelete() {
-  const fromISO = document.getElementById('hrrep-from').value.trim();
-  const toISO   = document.getElementById('hrrep-to').value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromISO) || !/^\d{4}-\d{2}-\d{2}$/.test(toISO)) { showToast('กรุณาเลือกช่วงวันที่ก่อนลบ'); return; }
+// ════════════════════════════════════════════════
+//  Broadcast Telegram (frontend)
+// ════════════════════════════════════════════════
+const BC = { target: 'all', people: [], departments: [] };
+
+function loadBroadcast() {
+  BC.target = 'all';
+  document.getElementById('bc-message').value = '';
+  bcUpdateCount();
+  bcSetTarget('all');
+  document.getElementById('bc-status').textContent = '';
+  document.getElementById('bc-recipient-count').textContent = 'กำลังโหลดรายชื่อ...';
+
+  gasRun('bcGetRecipients', { hrToken: S.hrToken })
+    .withSuccessHandler(r => {
+      if (!r || !r.success) { document.getElementById('bc-recipient-count').textContent = (r && r.message) || 'โหลดไม่สำเร็จ'; return; }
+      BC.people = r.people || [];
+      BC.departments = r.departments || [];
+      // เติม dropdown แผนก
+      const sel = document.getElementById('bc-dept-select');
+      sel.innerHTML = BC.departments.map(d => `<option value="${bcEsc(d.name)}">${bcEsc(d.name)} (${d.count} คน)</option>`).join('');
+      sel.onchange = bcUpdateRecipientCount;
+      // เติมรายชื่อคน
+      const list = document.getElementById('bc-emp-list');
+      list.innerHTML = BC.people.map(p => `
+        <label class="bc-emp-row" data-search="${bcEsc((p.empId + ' ' + p.name).toLowerCase())}" style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:14px">
+          <input type="checkbox" class="bc-emp-chk" value="${bcEsc(p.empId)}" onchange="bcUpdateRecipientCount()">
+          <span>${bcEsc(p.empId)} · ${bcEsc(p.name)}${p.hasChat ? '' : ' <span style=\"color:var(--tx3);font-size:12px\">(ไม่มี Telegram)</span>'}</span>
+        </label>`).join('');
+      bcUpdateRecipientCount();
+    })
+    .withFailureHandler(() => { document.getElementById('bc-recipient-count').textContent = 'เกิดข้อผิดพลาด'; });
+}
+
+function bcEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function bcSetTarget(t) {
+  BC.target = t;
+  document.querySelectorAll('.bc-target').forEach(b => b.classList.toggle('active', b.getAttribute('data-target') === t));
+  document.getElementById('bc-dept-box').style.display = (t === 'dept') ? 'block' : 'none';
+  document.getElementById('bc-pick-box').style.display = (t === 'pick') ? 'block' : 'none';
+  bcUpdateRecipientCount();
+}
+
+function bcFilterEmp(q) {
+  q = (q || '').toLowerCase().trim();
+  document.querySelectorAll('.bc-emp-row').forEach(row => {
+    const s = row.getAttribute('data-search') || '';
+    row.style.display = (!q || s.indexOf(q) !== -1) ? 'flex' : 'none';
+  });
+}
+
+function bcUpdateRecipientCount() {
+  const el = document.getElementById('bc-recipient-count');
+  if (!el) return;
+  let n = 0, withChat = 0;
+  if (BC.target === 'all') {
+    n = BC.people.length;
+    withChat = BC.people.filter(p => p.hasChat).length;
+  } else if (BC.target === 'dept') {
+    const dept = document.getElementById('bc-dept-select').value;
+    const inDept = BC.people.filter(p => p.dept === dept);
+    n = inDept.length;
+    withChat = inDept.filter(p => p.hasChat).length;
+  } else {
+    const picked = Array.from(document.querySelectorAll('.bc-emp-chk:checked')).map(c => c.value);
+    const pickSet = {}; picked.forEach(e => pickSet[e] = true);
+    const inPick = BC.people.filter(p => pickSet[p.empId]);
+    n = inPick.length;
+    withChat = inPick.filter(p => p.hasChat).length;
+  }
+  const noChat = n - withChat;
+  el.textContent = `ผู้รับ ${n} คน · มี Telegram ${withChat} คน` + (noChat ? ` · ไม่มี Telegram ${noChat} คน` : '');
+}
+
+function bcUpdateCount() {
+  const t = document.getElementById('bc-message').value;
+  document.getElementById('bc-charcount').textContent = t.length;
+}
+
+function bcSend() {
+  const message = document.getElementById('bc-message').value.trim();
+  if (!message) { showToast('กรุณาพิมพ์ข้อความ'); return; }
+  if (message.length > 4000) { showToast('ข้อความยาวเกิน 4000 ตัวอักษร'); return; }
+
+  const payload = { hrToken: S.hrToken, message: message, target: BC.target };
+  if (BC.target === 'dept') {
+    payload.dept = document.getElementById('bc-dept-select').value;
+    if (!payload.dept) { showToast('เลือกแผนกก่อน'); return; }
+  } else if (BC.target === 'pick') {
+    payload.empIds = Array.from(document.querySelectorAll('.bc-emp-chk:checked')).map(c => c.value);
+    if (!payload.empIds.length) { showToast('เลือกพนักงานก่อน'); return; }
+  }
+
+  if (!confirm('ส่งข้อความนี้ถึงพนักงาน?\n\n"' + message.slice(0, 100) + (message.length > 100 ? '...' : '') + '"')) return;
+
+  const btn = document.getElementById('bc-send-btn');
+  const status = document.getElementById('bc-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังส่ง...'; }
+  if (status) status.textContent = 'กำลังส่งข้อความ กรุณารอสักครู่...';
+
+  gasRunNoRetry('bcSendBroadcast', payload)
+    .withSuccessHandler(r => {
+      if (btn) { btn.disabled = false; btn.textContent = '📢 ส่งข้อความ'; }
+      if (!r || !r.success) { if (status) status.textContent = '✗ ' + ((r && r.message) || 'ส่งไม่สำเร็จ'); return; }
+      const rs = r.result || {};
+      let msg = `✓ ส่งสำเร็จ ${rs.sent || 0} คน`;
+      if (rs.noChatId) msg += ` · ไม่มี Telegram ID ${rs.noChatId} คน`;
+      if (rs.failed) msg += ` · ส่งพลาด ${rs.failed} คน`;
+      if (status) status.textContent = msg;
+    })
+    .withFailureHandler(() => { if (btn) { btn.disabled = false; btn.textContent = '📢 ส่งข้อความ'; } if (status) status.textContent = '✗ เกิดข้อผิดพลาด'; });
+}
+
+function hrDmDelete() {
+  const from = document.getElementById('hrdm-from').value.trim();
+  const to   = document.getElementById('hrdm-to').value.trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(from) || !/^\d{2}\/\d{2}\/\d{4}$/.test(to)) { showToast('กรุณากรอกช่วงวันที่ (วว/ดด/ปปปป)'); return; }
 
   // ขั้น 1: เตือนสำรองข้อมูล
-  const backedUp = confirm('⚠️ ต้องการลบข้อมูลการลงเวลา\nช่วง ' + isoToTH(fromISO) + ' ถึง ' + isoToTH(toISO) + '\n\nคุณได้สำรอง (Export) ข้อมูลไว้แล้วหรือยัง?\n\nกด "ตกลง" ถ้าสำรองแล้ว / "ยกเลิก" เพื่อไปสำรองก่อน');
+  const backedUp = confirm('⚠️ ต้องการลบข้อมูลการลงเวลา\nช่วง ' + from + ' ถึง ' + to + '\n\nคุณได้สำรอง (Export) ข้อมูลไว้แล้วหรือยัง?\n\nกด "ตกลง" ถ้าสำรองแล้ว / "ยกเลิก" เพื่อไปสำรองก่อน');
   if (!backedUp) return;
 
   // ขั้น 2: พิมพ์ YES ยืนยัน
@@ -2445,16 +2639,15 @@ function hrRepDelete() {
   if (confirmText === null) return;
   if (confirmText.trim() !== 'YES') { showToast('พิมพ์ YES ไม่ถูกต้อง ยกเลิกการลบ'); return; }
 
-  const from = isoToTH(fromISO), to = isoToTH(toISO);
-  const btn = document.getElementById('hrrep-delete');
+  const btn = document.getElementById('hrdm-delete');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังลบ...'; }
-  gasRun('hrDeleteAttendance', { hrToken: S.hrToken, dateFrom: from, dateTo: to, confirmText: confirmText.trim() })
+  gasRunNoRetry('hrDeleteAttendance', { hrToken: S.hrToken, dateFrom: from, dateTo: to, confirmText: confirmText.trim() })
     .withSuccessHandler(r => {
-      if (btn) { btn.disabled = false; btn.textContent = 'ล้างข้อมูลช่วงนี้'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'ลบข้อมูลช่วงนี้'; }
       if (!r || !r.success) { showToast((r && r.message) || 'ลบไม่สำเร็จ'); return; }
       showToast('ลบข้อมูลแล้ว ' + r.deleted + ' รายการ', true);
     })
-    .withFailureHandler(e => { if (btn) { btn.disabled = false; btn.textContent = 'ล้างข้อมูลช่วงนี้'; } showToast(e.message); });
+    .withFailureHandler(e => { if (btn) { btn.disabled = false; btn.textContent = 'ลบข้อมูลช่วงนี้'; } showToast(e.message); });
 }
 
 function renderReport(r) {
@@ -3786,7 +3979,7 @@ applyLogo();
   on('hrrep-all', 'click', hrRepSelectAll);
   on('hrrep-none', 'click', hrRepClearAll);
   on('hrrep-generate', 'click', hrRepGenerate);
-  on('hrrep-delete', 'click', hrRepDelete);
+  on('hrdm-delete', 'click', hrDmDelete);
   on('hr-autodel-save', 'click', hrAutoDelSave);
   on('hr-autodel-runnow', 'click', hrAutoDelRunNow);
   on('hrrep-csv', 'click', hrRepDownloadCSV);
@@ -3798,6 +3991,8 @@ applyLogo();
     });
   });
   on('hr-menu-export',    'click', function() { go('hr-export'); });
+  on('hr-menu-datamgmt',  'click', function() { go('hr-datamgmt'); });
+  on('hr-menu-broadcast', 'click', function() { go('hr-broadcast'); });
   on('hr-menu-holiday',   'click', function() { go('hr-holiday'); });
   on('hr-menu-face',      'click', function() { go('hr-face'); });
   on('hr-menu-kiosk',     'click', function() { go('kiosk'); });
