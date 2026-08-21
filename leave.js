@@ -654,47 +654,71 @@ function lvRenderReport(rows) {
   }
   // สรุปจำนวน + ปุ่ม export
   let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div style="font-size:14px;color:var(--tx2)">พบ ${rows.length} รายการ</div>
+    <div style="font-size:14px;color:var(--tx2)">พบ ${rows.length} รายการ · แตะแถวเพื่อดูรายละเอียด</div>
     <button class="btn sm" id="lvr-export" style="width:auto;padding:6px 16px;font-size:13px">↓ Excel (CSV)</button>
   </div>`;
 
-  // การ์ดต่อรายการ
-  html += rows.map(r => {
+  // ตาราง
+  html += `<div style="overflow-x:auto;border:1px solid var(--bd);border-radius:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap">
+    <thead><tr style="background:var(--sf2)">
+      <th style="padding:9px 10px;text-align:left;position:sticky;left:0;background:var(--sf2)">พนักงาน</th>
+      <th style="padding:9px 10px;text-align:left">ประเภท</th>
+      <th style="padding:9px 10px;text-align:left">ช่วงลา</th>
+      <th style="padding:9px 10px;text-align:center">เวลาเข้า/ออก</th>
+      <th style="padding:9px 10px;text-align:center">สถานะ</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach((r, idx) => {
     const st = LV_STATUS[r.status] || { text: r.status, cls: '' };
-    const canVoid = LV.reportCanVoid && (r.status === 'APPROVED' || r.status.indexOf('PENDING') === 0);
-    // สายอนุมัติ (แสดงเฉพาะที่มีข้อมูล)
+    const hasAtt = (r.attIn || r.attOut);
+    const attTxt = hasAtt ? ((r.attIn || '—') + ' - ' + (r.attOut || '—')) : 'ไม่มี';
+    // แถวหลัก (แตะได้)
+    html += `<tr class="lvr-row" data-idx="${idx}" style="border-top:1px solid var(--bd);cursor:pointer">
+      <td style="padding:8px 10px;position:sticky;left:0;background:var(--bg)">
+        <div style="font-weight:600">${lvEsc(r.empName)}</div>
+        <div style="font-size:11px;color:var(--tx3)">${lvEsc(r.empId)}</div>
+      </td>
+      <td style="padding:8px 10px;color:var(--ac)">${lvEsc(lvTypeName(r.leaveType))}</td>
+      <td style="padding:8px 10px">
+        <div>${lvEsc(lvFormatRange(r))}</div>
+        <div style="font-size:11px;color:var(--tx3)">${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
+      </td>
+      <td style="padding:8px 10px;text-align:center;color:${hasAtt ? '#c47d0a' : 'var(--tx3)'}">${lvEsc(attTxt)}${hasAtt ? ' ⚠️' : ''}</td>
+      <td style="padding:8px 10px;text-align:center"><span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span></td>
+    </tr>`;
+    // แถวรายละเอียด (ซ่อนไว้ แตะแถวหลักเพื่อเปิด)
     const chain = [];
     if (r.l1By) chain.push(`หัวหน้า: ${lvEsc(r.l1By)}${r.l1At ? ' (' + lvEsc(lvShortDT(r.l1At)) + ')' : ''}`);
     if (r.l2By) chain.push(`ผู้จัดการ: ${lvEsc(r.l2By)}${r.l2At ? ' (' + lvEsc(lvShortDT(r.l2At)) + ')' : ''}`);
     if (r.hrBy) chain.push(`บุคคล: ${lvEsc(r.hrBy)}${r.hrAt ? ' (' + lvEsc(lvShortDT(r.hrAt)) + ')' : ''}`);
     if (r.rejectBy) chain.push(`ปฏิเสธ/ยกเลิก: ${lvEsc(r.rejectBy)}`);
-
-    return `<div class="lv-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:600;font-size:15px">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:13px">(${lvEsc(r.empId)})</span></div>
-          <div style="font-size:14px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
-        </div>
-        <span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span>
-      </div>
-      <div style="font-size:14px;color:var(--tx2);margin-top:6px">${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
-      <div style="font-size:14px;margin-top:6px">${lvEsc(r.reason)}</div>
-      <div style="font-size:13px;margin-top:6px;color:${(r.attIn || r.attOut) ? '#c47d0a' : 'var(--tx3)'}">
-        เวลาเข้า/ออก (${(r.attIn || r.attOut) ? lvEsc((r.attIn || '—') + ' - ' + (r.attOut || '—')) : 'ไม่มี'})${(r.attIn || r.attOut) ? ' ⚠️' : ''}
-      </div>
-      ${chain.length ? `<div style="font-size:13px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)">${chain.join(' · ')}</div>` : ''}
-      <div style="font-size:12px;color:var(--tx3);margin-top:4px">เลขที่: ${lvEsc(r.requestId)}</div>
-      ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
-      ${canVoid ? `<div style="margin-top:10px"><button class="btn o sm lvr-void-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบลา</button></div>` : ''}
-    </div>`;
-  }).join('');
+    const canVoid = LV.reportCanVoid && (r.status === 'APPROVED' || r.status.indexOf('PENDING') === 0);
+    html += `<tr class="lvr-detail" data-detail="${idx}" style="display:none;background:var(--sf)">
+      <td colspan="5" style="padding:12px 14px;border-top:1px solid var(--bd);white-space:normal">
+        <div style="font-size:13px;margin-bottom:6px"><b>เหตุผล:</b> ${lvEsc(r.reason || '—')}</div>
+        ${chain.length ? `<div style="font-size:12px;color:var(--tx2);margin-bottom:6px">${chain.join(' · ')}</div>` : ''}
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:6px">เลขที่: ${lvEsc(r.requestId)} · ยื่น ${lvEsc(lvShortDT(r.createdAt))}</div>
+        ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+        ${canVoid ? `<div style="margin-top:8px"><button class="btn o sm lvr-void-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบลา</button></div>` : ''}
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
 
   box.innerHTML = html;
 
-  // ผูกปุ่ม
+  // ผูกปุ่ม + แตะแถวขยาย
   const exp = document.getElementById('lvr-export');
   if (exp) exp.addEventListener('click', exportReportCSV);
-  box.querySelectorAll('.lvr-void-btn').forEach(b => b.addEventListener('click', () => openVoidDialog(b.getAttribute('data-id'))));
+  box.querySelectorAll('.lvr-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const idx = row.getAttribute('data-idx');
+      const detail = box.querySelector('.lvr-detail[data-detail="' + idx + '"]');
+      if (detail) detail.style.display = (detail.style.display === 'none') ? 'table-row' : 'none';
+    });
+  });
+  box.querySelectorAll('.lvr-void-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openVoidDialog(b.getAttribute('data-id')); }));
 }
 
 // ย่อ datetime "yyyy-MM-dd HH:mm:ss" → "dd/MM/yyyy HH:mm"

@@ -528,36 +528,60 @@ function renderOTReport(rows) {
     </div>
   </div>`;
 
-  html += rows.map(r => {
+  html += `<div style="overflow-x:auto;border:1px solid var(--bd);border-radius:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap">
+    <thead><tr style="background:var(--sf2)">
+      <th style="padding:9px 10px;text-align:left;position:sticky;left:0;background:var(--sf2)">พนักงาน</th>
+      <th style="padding:9px 10px;text-align:left">ประเภท</th>
+      <th style="padding:9px 10px;text-align:left">ช่วง OT</th>
+      <th style="padding:9px 10px;text-align:center">เวลาออกงาน</th>
+      <th style="padding:9px 10px;text-align:center">สถานะ</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach((r, idx) => {
     const st = OT_STATUS[r.status] || { text: r.status, cls: '' };
+    html += `<tr class="otr-row" data-idx="${idx}" style="border-top:1px solid var(--bd);cursor:pointer">
+      <td style="padding:8px 10px;position:sticky;left:0;background:var(--bg)">
+        <div style="font-weight:600">${otEsc(r.empName)}</div>
+        <div style="font-size:11px;color:var(--tx3)">${otEsc(r.empId)}</div>
+      </td>
+      <td style="padding:8px 10px;color:var(--ac)">${otEsc(r.otTypeName)}</td>
+      <td style="padding:8px 10px">
+        <div>${otEsc(otFormatRange(r))}</div>
+        <div style="font-size:11px;color:var(--tx3)"><b>${otEsc(otHoursText(r.hours))}</b></div>
+      </td>
+      <td style="padding:8px 10px;text-align:center;color:${r.attOut ? '#c47d0a' : 'var(--tx3)'}">${r.attOut ? otEsc(r.attOut) : '—'}</td>
+      <td style="padding:8px 10px;text-align:center"><span class="lv-badge ${st.cls}">${otEsc(st.text)}</span></td>
+    </tr>`;
     const canVoid = OT.reportCanVoid && (r.status === 'APPROVED' || r.status.indexOf('PENDING') === 0);
     const chain = [];
     if (r.l1By) chain.push(`หัวหน้า: ${otEsc(r.l1By)}${r.l1At ? ' (' + otEsc(otShortDT(r.l1At)) + ')' : ''}`);
     if (r.l2By) chain.push(`ผู้จัดการ: ${otEsc(r.l2By)}${r.l2At ? ' (' + otEsc(otShortDT(r.l2At)) + ')' : ''}`);
     if (r.hrBy) chain.push(`บุคคล: ${otEsc(r.hrBy)}${r.hrAt ? ' (' + otEsc(otShortDT(r.hrAt)) + ')' : ''}`);
     if (r.rejectBy) chain.push(`ปฏิเสธ/ยกเลิก: ${otEsc(r.rejectBy)}`);
-    return `<div class="lv-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:600">${otEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:12px">(${otEsc(r.empId)})</span></div>
-          <div style="font-size:13px;color:var(--ac);margin-top:2px">${otEsc(r.otTypeName)}</div>
-        </div>
-        <span class="lv-badge ${st.cls}">${otEsc(st.text)}</span>
-      </div>
-      <div style="font-size:13px;color:var(--tx2);margin-top:6px">${otEsc(otFormatRange(r))} · <b>${otEsc(otHoursText(r.hours))}</b></div>
-      ${r.detail ? `<div style="font-size:13px;margin-top:6px">${otEsc(r.detail)}</div>` : ''}
-      ${r.attOut ? `<div style="font-size:12px;color:var(--tx3);margin-top:4px">เวลาออกงาน: ${otEsc(r.attOut)}</div>` : ''}
-      ${chain.length ? `<div style="font-size:12px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)">${chain.join(' · ')}</div>` : ''}
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">เลขที่: ${otEsc(r.requestId)}${r.createdBy ? ' · ผู้บันทึก: ' + otEsc(r.createdBy) : ''}</div>
-      ${r.fileUrl ? `<a href="${otEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
-      ${canVoid ? `<div style="margin-top:10px"><button class="btn o sm otr-void-btn" data-id="${otEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบ OT</button></div>` : ''}
-    </div>`;
-  }).join('');
+    html += `<tr class="otr-detail" data-detail="${idx}" style="display:none;background:var(--sf)">
+      <td colspan="5" style="padding:12px 14px;border-top:1px solid var(--bd);white-space:normal">
+        ${r.detail ? `<div style="font-size:13px;margin-bottom:6px"><b>รายละเอียด:</b> ${otEsc(r.detail)}</div>` : ''}
+        ${chain.length ? `<div style="font-size:12px;color:var(--tx2);margin-bottom:6px">${chain.join(' · ')}</div>` : ''}
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:6px">เลขที่: ${otEsc(r.requestId)}${r.createdBy ? ' · ผู้บันทึก: ' + otEsc(r.createdBy) : ''}</div>
+        ${r.fileUrl ? `<a href="${otEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
+        ${canVoid ? `<div style="margin-top:8px"><button class="btn o sm otr-void-btn" data-id="${otEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบ OT</button></div>` : ''}
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
 
   box.innerHTML = html;
   const exp = document.getElementById('otr-export'); if (exp) exp.addEventListener('click', exportOTReportCSV);
   const pdf = document.getElementById('otr-pdf'); if (pdf) pdf.addEventListener('click', printOTReportPDF);
-  box.querySelectorAll('.otr-void-btn').forEach(b => b.addEventListener('click', () => otVoidRequest(b.getAttribute('data-id'))));
+  box.querySelectorAll('.otr-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const idx = row.getAttribute('data-idx');
+      const detail = box.querySelector('.otr-detail[data-detail="' + idx + '"]');
+      if (detail) detail.style.display = (detail.style.display === 'none') ? 'table-row' : 'none';
+    });
+  });
+  box.querySelectorAll('.otr-void-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); otVoidRequest(b.getAttribute('data-id')); }));
 }
 
 // พิมพ์รายงาน OT เป็น PDF (เปิดหน้าต่างพิมพ์ → ผู้ใช้ Save as PDF)
