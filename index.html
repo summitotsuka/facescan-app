@@ -65,9 +65,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(
 .exp-meta{font-size:10px;color:var(--tx3)}
 .rep-stat{flex:1;min-width:64px;padding:7px 0;border-radius:8px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;font-weight:500;font-family:var(--fn);cursor:pointer;transition:all .15s}
 .rep-stat.active{background:var(--ac);border-color:var(--ac);color:#fff}
-.rep-table{width:100%;border-collapse:collapse;font-size:11px}
-.rep-table th{background:var(--sf2);padding:8px 6px;text-align:left;color:var(--tx3);font-weight:500;white-space:nowrap;position:sticky;top:0}
-.rep-table td{padding:7px 6px;border-top:1px solid var(--bd);white-space:nowrap;color:var(--tx)}
+.rep-table{width:100%;border-collapse:collapse;font-size:13px}
+.rep-table th{background:var(--sf2);padding:9px 8px;text-align:left;color:var(--tx2);font-weight:700;white-space:nowrap;position:sticky;top:0;font-size:13px}
+.rep-table td{padding:9px 8px;border-top:1px solid var(--bd);white-space:nowrap;color:var(--tx)}
 .rep-bdg{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:600}
 .nav-clock{font-family:var(--mo);font-size:11px;color:var(--tx3)}
 
@@ -2216,6 +2216,9 @@ function applyDashFilter(filter) {
   let html = '';
   filtered.forEach(e => {
     const b = badgeMap[e.status] || badgeMap.absent;
+    const srcParts = [];
+    if (e.inSrc && e.inSrc !== '-') srcParts.push('เข้า: ' + e.inSrc);
+    if (e.outSrc && e.outSrc !== '-') srcParts.push('ออก: ' + e.outSrc);
     const times = (e.inTime || e.outTime)
       ? `${e.inTime || '—'}${e.outTime ? ' → ' + e.outTime : ''}`
       : '';
@@ -2225,7 +2228,7 @@ function applyDashFilter(filter) {
         <div class="hd-name">${e.name}</div>
         <div class="hd-meta">${e.empId} · ${e.department} · กะ ${e.shift}</div>
       </div>
-      ${times ? `<div class="hd-times">${times}</div>` : ''}
+      ${times ? `<div class="hd-times">${times}${srcParts.length ? `<div style="font-size:10px;color:var(--tx3);text-align:right">${srcParts.join(' · ')}</div>` : ''}</div>` : ''}
     </div>`;
   });
   list.innerHTML = html;
@@ -2666,20 +2669,21 @@ function renderReport(r) {
     absent:      '<span class="rep-bdg" style="background:rgba(120,120,130,.15);color:var(--tx2)">ไม่มา</span>',
   };
 
-  let html = '<table class="rep-table"><thead><tr><th>ชื่อ</th><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สถานะ</th><th>ชม.</th></tr></thead><tbody>';
+  let html = '<table class="rep-table"><thead><tr><th>ชื่อ</th><th>วันที่</th><th>เข้า</th><th>ออก</th><th>สถานะ</th></tr></thead><tbody>';
   if (rows.length === 0) {
-    html += '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tx3)">ไม่มีข้อมูล</td></tr>';
+    html += '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--tx3)">ไม่มีข้อมูล</td></tr>';
   } else {
     rows.forEach(row => {
       const [y,m,d] = row.date.split('-');
-      const dow = row.dow ? ` <span style="color:var(--tx3);font-size:9px">(${row.dow})</span>` : '';
+      const dow = row.dow ? ` <span style="color:var(--tx3);font-size:11px">(${row.dow})</span>` : '';
+      const inSrc  = (row.inSrc  && row.inSrc  !== '-') ? `<div style="font-size:10px;color:var(--tx3)">${row.inSrc}</div>` : '';
+      const outSrc = (row.outSrc && row.outSrc !== '-') ? `<div style="font-size:10px;color:var(--tx3)">${row.outSrc}</div>` : '';
       html += `<tr>
-        <td>${row.name}<div style="font-size:9px;color:var(--tx3)">${row.empId}</div></td>
+        <td>${row.name}<div style="font-size:11px;color:var(--tx3)">${row.empId}</div></td>
         <td>${d}/${m}/${(+y)+543}${dow}</td>
-        <td>${row.inTime || '—'}</td>
-        <td>${row.outTime || '—'}</td>
+        <td>${row.inTime || '—'}${inSrc}</td>
+        <td>${row.outTime || '—'}${outSrc}</td>
         <td>${badge[row.status] || ''}</td>
-        <td>${row.workHours ? row.workHours.toFixed(1) : '—'}</td>
       </tr>`;
     });
   }
