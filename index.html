@@ -3807,7 +3807,7 @@ function renderHistory(r) {
     return;
   }
 
-  let html = '<table class="hist-table"><thead><tr><th>วัน/เวลา</th><th>ประเภท</th><th>สถานะ</th><th>ชั่วโมง</th></tr></thead><tbody>';
+  let html = '<table class="hist-table"><thead><tr><th>วัน/เวลา</th><th>ประเภท</th><th>สถานะ</th><th>ที่มา</th></tr></thead><tbody>';
   let lastDate = '';
   rows.forEach(row => {
     if (!row || !row.date) return;
@@ -3831,9 +3831,11 @@ function renderHistory(r) {
     else if (st === 'MANUAL') statusHtml = '<span class="status-late">✎ คีย์โดย HR</span>';
     else statusHtml = `<span class="status-err">✗ ${st}</span>`;
     const typeHtml = row.type === 'IN' ? '<span class="type-in">เข้า</span>' : '<span class="type-out">ออก</span>';
-    const durHtml = row.duration ? `<span style="font-size:13px;color:var(--ok)">${row.duration}</span>` : '—';
+    const srcMap = { FACE: 'Kiosk', KIOSK: 'Kiosk', FINGER: 'สแกนนิ้ว', GPS: 'มือถือ', MANUAL: 'คีย์มือ' };
+    const srcLabel = srcMap[String(row.source || '').toUpperCase()] || '—';
+    const srcHtml = `<span style="font-size:12px;color:var(--tx3)">${srcLabel}</span>`;
     const dim = row.complete === false ? 'opacity:.5' : '';
-    html += `<tr style="${isNewDay?'border-top:2px solid var(--bd2);':''}${dim}"><td><div class="hist-date">${thDate}</div><div style="font-family:var(--mo);font-size:13px;color:var(--tx)">${timeShort}${crossNote}</div></td><td>${typeHtml}</td><td>${statusHtml}</td><td>${durHtml}</td></tr>`;
+    html += `<tr style="${isNewDay?'border-top:2px solid var(--bd2);':''}${dim}"><td><div class="hist-date">${thDate}</div><div style="font-family:var(--mo);font-size:13px;color:var(--tx)">${timeShort}${crossNote}</div></td><td>${typeHtml}</td><td>${statusHtml}</td><td>${srcHtml}</td></tr>`;
   });
   html += '</tbody></table>';
   body.innerHTML = html;
