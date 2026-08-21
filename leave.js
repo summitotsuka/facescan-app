@@ -654,7 +654,7 @@ function lvRenderReport(rows) {
   }
   // สรุปจำนวน + ปุ่ม export
   let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div style="font-size:13px;color:var(--tx2)">พบ ${rows.length} รายการ</div>
+    <div style="font-size:14px;color:var(--tx2)">พบ ${rows.length} รายการ</div>
     <button class="btn sm" id="lvr-export" style="width:auto;padding:6px 16px;font-size:13px">↓ Excel (CSV)</button>
   </div>`;
 
@@ -672,15 +672,18 @@ function lvRenderReport(rows) {
     return `<div class="lv-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
-          <div style="font-weight:600">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:12px">(${lvEsc(r.empId)})</span></div>
-          <div style="font-size:13px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
+          <div style="font-weight:600;font-size:15px">${lvEsc(r.empName)} <span style="color:var(--tx3);font-weight:400;font-size:13px">(${lvEsc(r.empId)})</span></div>
+          <div style="font-size:14px;color:var(--ac);margin-top:2px">${lvEsc(lvTypeName(r.leaveType))}</div>
         </div>
         <span class="lv-badge ${st.cls}">${lvEsc(st.text)}</span>
       </div>
-      <div style="font-size:13px;color:var(--tx2);margin-top:6px">${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
-      <div style="font-size:13px;margin-top:6px">${lvEsc(r.reason)}</div>
-      ${chain.length ? `<div style="font-size:12px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)">${chain.join(' · ')}</div>` : ''}
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">เลขที่: ${lvEsc(r.requestId)}</div>
+      <div style="font-size:14px;color:var(--tx2);margin-top:6px">${lvEsc(lvFormatRange(r))} · ${lvEsc(LV_MODE[r.mode] || r.mode)} · ${lvEsc(r.hoursText)}</div>
+      <div style="font-size:14px;margin-top:6px">${lvEsc(r.reason)}</div>
+      <div style="font-size:13px;margin-top:6px;color:${(r.attIn || r.attOut) ? '#c47d0a' : 'var(--tx3)'}">
+        เวลาเข้า/ออก (${(r.attIn || r.attOut) ? lvEsc((r.attIn || '—') + ' - ' + (r.attOut || '—')) : 'ไม่มี'})${(r.attIn || r.attOut) ? ' ⚠️' : ''}
+      </div>
+      ${chain.length ? `<div style="font-size:13px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)">${chain.join(' · ')}</div>` : ''}
+      <div style="font-size:12px;color:var(--tx3);margin-top:4px">เลขที่: ${lvEsc(r.requestId)}</div>
       ${r.fileUrl ? `<a href="${lvEsc(r.fileUrl)}" target="_blank" style="font-size:12px;color:var(--ac)">📎 ไฟล์แนบ</a>` : ''}
       ${canVoid ? `<div style="margin-top:10px"><button class="btn o sm lvr-void-btn" data-id="${lvEsc(r.requestId)}" style="width:auto;padding:5px 14px;font-size:12px;color:var(--er);border-color:var(--er)">ยกเลิกใบลา</button></div>` : ''}
     </div>`;

@@ -261,7 +261,7 @@ textarea.inp{resize:vertical;min-height:60px}
   <div style="text-align:center;padding:28px 0 20px">
     <div data-logo-hero style="width:60px;height:60px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px">W</div>
     <div style="font-size:24px;font-weight:600">Summit Otsuka Manufacturing Co., Ltd.</div>
-    <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบงานบุคคล</div>
+    <div style="font-size:13px;color:var(--tx2);margin-top:4px">ระบบลงเวลาเข้า-ออกงาน</div>
   </div>
 
   <div class="card">
@@ -531,9 +531,9 @@ textarea.inp{resize:vertical;min-height:60px}
     <div style="font-size:12px;color:var(--tx3);margin-top:3px" id="hr-welcome">—</div>
   </div>
 
-  <!-- เมนู HR แบบการ์ด -->
-  <div style="display:grid;gap:10px">
-    <div class="hr-menu-card" id="hr-menu-dashboard">
+  <!-- เมนู HR แบบการ์ด (เรียงด้วย CSS order) -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="hr-menu-card" id="hr-menu-dashboard" style="order:1">
       <div class="hr-menu-icon" style="background:rgba(59,130,246,.15);color:var(--ac)">▦</div>
       <div style="flex:1">
         <div class="hr-menu-title">ภาพรวมรายวัน</div>
@@ -542,88 +542,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-finger">
-      <div class="hr-menu-icon" style="background:rgba(34,197,94,.15);color:#16a34a">🕐</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">อัปโหลดเวลา</div>
-        <div class="hr-menu-desc">นำเข้าไฟล์เวลาจากเครื่องสแกนนิ้ว</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-leave-approve">
-      <div class="hr-menu-icon" style="background:rgba(234,159,39,.15);color:#c47d0a">✔</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">อนุมัติการลา</div>
-        <div class="hr-menu-desc">คำขอลาที่รอฝ่ายบุคคลอนุมัติ</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-ot-approve">
-      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">⏱️</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">อนุมัติ OT</div>
-        <div class="hr-menu-desc">อนุมัติคำขอทำงานล่วงเวลา</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-report">
-      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">▤</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">รายงานการบันทึกเวลา</div>
-        <div class="hr-menu-desc">ดูประวัติการลงเวลาของพนักงานแต่ละคน</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-leave-report">
-      <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📊</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">รายงานการลา</div>
-        <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบลา</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-ot-report">
-      <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📈</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">รายงาน OT</div>
-        <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบ OT</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-payroll">
-      <div class="hr-menu-icon" style="background:rgba(16,185,129,.12);color:var(--ok)">💰</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">สลิปเงินเดือน</div>
-        <div class="hr-menu-desc">จัดการงวด นำเข้าข้อมูล ตรวจสอบ</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-payreport">
-      <div class="hr-menu-icon" style="background:rgba(59,130,246,.12);color:var(--ac)">📊</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">รายงานเงินเดือน</div>
-        <div class="hr-menu-desc">เลือกคน/งวด/คอลัมน์ · ดูตาราง · Export Excel</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-broadcast">
-      <div class="hr-menu-icon" style="background:rgba(37,99,235,.15);color:var(--ac)">📢</div>
-      <div style="flex:1">
-        <div class="hr-menu-title">ส่งข้อความ Telegram</div>
-        <div class="hr-menu-desc">ประกาศ/แจ้งข่าวถึงพนักงานผ่าน Telegram</div>
-      </div>
-      <div class="hr-menu-arrow">›</div>
-    </div>
-
-    <div class="hr-menu-card" id="hr-menu-employees">
+    <div class="hr-menu-card" id="hr-menu-employees" style="order:11">
       <div class="hr-menu-icon" style="background:rgba(16,185,129,.15);color:var(--ok)">☷</div>
       <div style="flex:1">
         <div class="hr-menu-title">จัดการพนักงาน</div>
@@ -632,16 +551,16 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-datamgmt">
-      <div class="hr-menu-icon" style="background:rgba(100,116,139,.15);color:var(--tx2)">🗄</div>
+    <div class="hr-menu-card" id="hr-menu-report" style="order:5">
+      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">▤</div>
       <div style="flex:1">
-        <div class="hr-menu-title">จัดการข้อมูลเวลา</div>
-        <div class="hr-menu-desc">ลบข้อมูลเก่า/ตั้งลบอัตโนมัติ + สำรองไป archive</div>
+        <div class="hr-menu-title">รายงานการบันทึกเวลา</div>
+        <div class="hr-menu-desc">ดูประวัติการลงเวลาของพนักงานแต่ละคน</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-export">
+    <div class="hr-menu-card" id="hr-menu-export" style="order:13">
       <div class="hr-menu-icon" style="background:rgba(168,85,247,.15);color:var(--ac2)">⤓</div>
       <div style="flex:1">
         <div class="hr-menu-title">Export ข้อมูลเวลา</div>
@@ -650,7 +569,25 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-holiday">
+    <div class="hr-menu-card" id="hr-menu-datamgmt" style="order:12">
+      <div class="hr-menu-icon" style="background:rgba(100,116,139,.15);color:var(--tx2)">🗄</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">จัดการข้อมูลเวลา</div>
+        <div class="hr-menu-desc">ลบข้อมูลเก่า/ตั้งลบอัตโนมัติ + สำรองไป archive</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-broadcast" style="order:10">
+      <div class="hr-menu-icon" style="background:rgba(37,99,235,.15);color:var(--ac)">📢</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">ส่งข้อความ Telegram</div>
+        <div class="hr-menu-desc">ประกาศ/แจ้งข่าวถึงพนักงานผ่าน Telegram</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-holiday" style="order:14">
       <div class="hr-menu-icon" style="background:rgba(236,72,153,.15);color:var(--er)">◷</div>
       <div style="flex:1">
         <div class="hr-menu-title">จัดการวันหยุด</div>
@@ -659,7 +596,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-face">
+    <div class="hr-menu-card" id="hr-menu-face" style="order:16">
       <div class="hr-menu-icon" style="background:rgba(37,99,235,.15);color:var(--ac)">☺</div>
       <div style="flex:1">
         <div class="hr-menu-title">ลงทะเบียนใบหน้า</div>
@@ -668,7 +605,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-kiosk">
+    <div class="hr-menu-card" id="hr-menu-kiosk" style="order:15">
       <div class="hr-menu-icon" style="background:rgba(5,150,105,.15);color:var(--ok)">⊙</div>
       <div style="flex:1">
         <div class="hr-menu-title">เปิดโหมด Kiosk</div>
@@ -677,11 +614,64 @@ textarea.inp{resize:vertical;min-height:60px}
       <div class="hr-menu-arrow">›</div>
     </div>
 
-    <div class="hr-menu-card" id="hr-menu-ot-report">
+    <div class="hr-menu-card" id="hr-menu-leave-approve" style="order:3">
+      <div class="hr-menu-icon" style="background:rgba(234,159,39,.15);color:#c47d0a">✔</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อนุมัติการลา</div>
+        <div class="hr-menu-desc">คำขอลาที่รอฝ่ายบุคคลอนุมัติ</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-leave-report" style="order:6">
+      <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📊</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงานการลา</div>
+        <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-finger" style="order:2">
+      <div class="hr-menu-icon" style="background:rgba(34,197,94,.15);color:#16a34a">🕐</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อัปโหลดเวลา</div>
+        <div class="hr-menu-desc">นำเข้าไฟล์เวลาจากเครื่องสแกนนิ้ว</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-ot-approve" style="order:4">
+      <div class="hr-menu-icon" style="background:rgba(245,158,11,.15);color:var(--wn)">⏱️</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">อนุมัติ OT</div>
+        <div class="hr-menu-desc">อนุมัติคำขอทำงานล่วงเวลา</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-ot-report" style="order:7">
       <div class="hr-menu-icon" style="background:rgba(55,138,221,.15);color:var(--ac)">📈</div>
       <div style="flex:1">
         <div class="hr-menu-title">รายงาน OT</div>
         <div class="hr-menu-desc">ดู/ส่งออก + ยกเลิกใบ OT</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+
+    <div class="hr-menu-card" id="hr-menu-payroll" style="order:8">
+      <div class="hr-menu-icon" style="background:rgba(16,185,129,.12);color:var(--ok)">💰</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">สลิปเงินเดือน</div>
+        <div class="hr-menu-desc">จัดการงวด นำเข้าข้อมูล ตรวจสอบ</div>
+      </div>
+      <div class="hr-menu-arrow">›</div>
+    </div>
+    <div class="hr-menu-card" id="hr-menu-payreport" style="order:9">
+      <div class="hr-menu-icon" style="background:rgba(59,130,246,.12);color:var(--ac)">📊</div>
+      <div style="flex:1">
+        <div class="hr-menu-title">รายงานเงินเดือน</div>
+        <div class="hr-menu-desc">เลือกคน/งวด/คอลัมน์ · ดูตาราง · Export Excel</div>
       </div>
       <div class="hr-menu-arrow">›</div>
     </div>
@@ -1570,7 +1560,7 @@ textarea.inp{resize:vertical;min-height:60px}
 <div class="page" id="page-leave-report">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <button class="btn o sm" id="lvr-back" style="width:auto;padding:6px 12px">‹ กลับ</button>
-    <h2 style="margin:0;font-size:18px">รายงานการลา</h2>
+    <h2 style="margin:0;font-size:20px">รายงานการลา</h2>
   </div>
 
   <div class="card" style="margin-bottom:14px">
