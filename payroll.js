@@ -262,7 +262,7 @@ function renderPayTable() {
 
   const slipBadge = (st) => {
     if (st === 'ส่งแล้ว') return '<span class="lv-badge" style="background:rgba(5,150,105,.1);color:var(--ok)">ส่งแล้ว</span>';
-    if (st === 'สร้างแล้ว') return '<span class="lv-badge" style="background:rgba(37,99,235,.1);color:var(--ac)">สร้างแล้ว</span>';
+    if (st === 'สร้างแล้ว' || st === '✓สร้างใหม่แล้ว') return '<span class="lv-badge" style="background:rgba(37,99,235,.1);color:var(--ac)">สร้างแล้ว</span>';
     return '<span class="lv-badge" style="background:rgba(148,163,184,.15);color:var(--tx2)">ยังไม่สร้าง</span>';
   };
 
@@ -532,8 +532,8 @@ function payGenPDF(rowIds, forceAll) {
   }
 
   // ═══ โหมดทั้งงวด — backend หยิบ batch, วนจน done (forceAll=true สร้างใหม่ทั้งงวด) ═══
-  let guardRounds = 0, allRetries = 0;
-  const maxRounds = 300, MAX_RETRY_ALL = 2;
+  let guardRounds = 0, allRetries = 0, emptyBatches = 0;
+  const maxRounds = 300, MAX_RETRY_ALL = 2, MAX_EMPTY = 2;
   const runBatch = () => {
     if (!stillValid()) return;
     if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
@@ -554,8 +554,17 @@ function payGenPDF(rowIds, forceAll) {
         if (r.done || r.remaining <= 0) {
           finish(`✓ สร้าง PDF เสร็จ ${done}/${total} ใบ`);
         } else if (r.generatedThisBatch === 0) {
-          finish(`⚠️ หยุด — สร้างได้ ${done}/${total} (บางรายการสร้างไม่สำเร็จ ลองใหม่)`);
+          // batch นี้สร้างไม่ได้เลย (อาจ error ชั่วคราว/quota) → retry ก่อนยอมแพ้
+          emptyBatches++;
+          if (emptyBatches <= MAX_EMPTY) {
+            if (txt) txt.textContent = `ลองใหม่... ${done}/${total}`;
+            setTimeout(runBatch, 1200);
+          } else {
+            const errNote = (r.errors && r.errors.length) ? ' — ' + r.errors[0] : '';
+            finish(`⚠️ หยุด — สร้างได้ ${done}/${total} (บางรายการสร้างไม่สำเร็จ กดสร้างอีกครั้งเพื่อทำต่อ)${errNote}`);
+          }
         } else {
+          emptyBatches = 0;   // batch นี้สร้างได้ → reset ตัวนับ batch ว่าง
           runBatch();
         }
       })
