@@ -497,7 +497,7 @@ function payGenPDF(rowIds, forceAll) {
 
   if (rowIds && rowIds.length) {
     // ═══ โหมดเลือกเฉพาะคน — frontend แบ่ง batch ทีละ 5 ส่งไปเรื่อยๆ ═══
-    const BATCH = 5;
+    const BATCH = 3;
     const allIds = rowIds.slice();
     const totalSel = allIds.length;
     let idx = 0, errCount = 0, retries = 0;
@@ -507,7 +507,7 @@ function payGenPDF(rowIds, forceAll) {
       if (!stillValid()) return;
       if (idx >= totalSel) { finish(`✓ สร้าง PDF เสร็จ ${totalSel - errCount}/${totalSel} ใบ`); return; }
       const chunk = allIds.slice(idx, idx + BATCH);
-      gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: chunk })
+      gasRunLong('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: chunk })
         .withSuccessHandler(r => {
           if (!stillValid()) return;
           if (!r || !r.success) {
@@ -541,7 +541,7 @@ function payGenPDF(rowIds, forceAll) {
   const runBatch = () => {
     if (!stillValid()) return;
     if (++guardRounds > maxRounds) { finish('✗ หยุด (เกินจำนวนรอบที่กำหนด)'); return; }
-    gasRun('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: null, force: !!forceAll })
+    gasRunLong('payGeneratePDF', { hrToken: S.hrToken, periodId: p.periodId, rowIds: null, force: !!forceAll })
       .withSuccessHandler(r => {
         if (!stillValid()) return;
         if (!r || !r.success) {
