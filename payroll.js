@@ -205,7 +205,7 @@ function payHandleUpload(file) {
           return;
         }
         if (status) { status.style.color = 'var(--ok)'; status.textContent = '✓ นำเข้าเรียบร้อย'; }
-        renderLoadResult(r.result);
+        renderLoadResult(r.result, r.headcount);
         loadPayTable();
       })
       .withFailureHandler(() => { if (status) { status.style.color = 'var(--er)'; status.textContent = '✗ เกิดข้อผิดพลาด'; } });
@@ -214,13 +214,14 @@ function payHandleUpload(file) {
 }
 
 // สรุปผลโหลด
-function renderLoadResult(res) {
+function renderLoadResult(res, headcount) {
   const box = document.getElementById('pay-load-result');
   if (!box || !res) return;
   let html = `<div class="card" style="margin-bottom:14px">
-    <div style="font-weight:600;font-size:15px;margin-bottom:10px">ผลการนำเข้า</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:6px">ผลการนำเข้า</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">การนำเข้าจะอัปเดต/เพิ่มเฉพาะคนในไฟล์ ไม่ลบคนอื่นในงวด</div>
     <div style="display:flex;flex-direction:column;gap:5px;font-size:14px">
-      <div><b style="font-size:16px">${res.total}</b> นำเข้าทั้งหมด</div>
+      <div><b style="font-size:16px">${res.total}</b> นำเข้าจากไฟล์</div>
       <div><b style="font-size:16px;color:var(--ok)">${res.success}</b> ✓ สำเร็จ</div>
       <div><b style="font-size:16px;color:var(--er)">${res.failed}</b> ✗ ไม่สำเร็จ</div>`;
   if (res.failList && res.failList.length) {
@@ -229,6 +230,9 @@ function renderLoadResult(res) {
   html += `<div><b style="font-size:16px;color:var(--wn)">${res.warned}</b> ⚠️ ยอดรวมไม่ตรง (ให้ตรวจสอบ)</div>`;
   if (res.warnList && res.warnList.length) {
     html += res.warnList.map(w => `<div style="font-size:13px;color:var(--wn);padding-left:20px">• ${payEsc(w)}</div>`).join('');
+  }
+  if (headcount != null) {
+    html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--bd)"><b style="font-size:16px;color:var(--ac)">${headcount}</b> คนในงวดนี้ทั้งหมด (หลังนำเข้า)</div>`;
   }
   html += `</div></div>`;
   box.innerHTML = html;
