@@ -2216,9 +2216,12 @@ function applyDashFilter(filter) {
   let html = '';
   filtered.forEach(e => {
     const b = badgeMap[e.status] || badgeMap.absent;
+    const fmtSrc = (label, val) => val === 'คีย์มือ'
+      ? `<span style="color:#e8590c;font-weight:700">${label}: ${val}</span>`
+      : `${label}: ${val}`;
     const srcParts = [];
-    if (e.inSrc && e.inSrc !== '-') srcParts.push('เข้า: ' + e.inSrc);
-    if (e.outSrc && e.outSrc !== '-') srcParts.push('ออก: ' + e.outSrc);
+    if (e.inSrc && e.inSrc !== '-') srcParts.push(fmtSrc('เข้า', e.inSrc));
+    if (e.outSrc && e.outSrc !== '-') srcParts.push(fmtSrc('ออก', e.outSrc));
     const times = (e.inTime || e.outTime)
       ? `${e.inTime || '—'}${e.outTime ? ' → ' + e.outTime : ''}`
       : '';
@@ -2676,8 +2679,8 @@ function renderReport(r) {
     rows.forEach(row => {
       const [y,m,d] = row.date.split('-');
       const dow = row.dow ? ` <span style="color:var(--tx3);font-size:11px">(${row.dow})</span>` : '';
-      const inSrc  = (row.inSrc  && row.inSrc  !== '-') ? `<div style="font-size:10px;color:var(--tx3)">${row.inSrc}</div>` : '';
-      const outSrc = (row.outSrc && row.outSrc !== '-') ? `<div style="font-size:10px;color:var(--tx3)">${row.outSrc}</div>` : '';
+      const inSrc  = (row.inSrc  && row.inSrc  !== '-') ? (row.inSrc === 'คีย์มือ'  ? `<div style="font-size:12px;color:#e8590c;font-weight:700">${row.inSrc}</div>`  : `<div style="font-size:10px;color:var(--tx3)">${row.inSrc}</div>`)  : '';
+      const outSrc = (row.outSrc && row.outSrc !== '-') ? (row.outSrc === 'คีย์มือ' ? `<div style="font-size:12px;color:#e8590c;font-weight:700">${row.outSrc}</div>` : `<div style="font-size:10px;color:var(--tx3)">${row.outSrc}</div>`) : '';
       html += `<tr>
         <td>${row.name}<div style="font-size:11px;color:var(--tx3)">${row.empId}</div></td>
         <td>${d}/${m}/${(+y)+543}${dow}</td>
@@ -3833,7 +3836,9 @@ function renderHistory(r) {
     const typeHtml = row.type === 'IN' ? '<span class="type-in">เข้า</span>' : '<span class="type-out">ออก</span>';
     const srcMap = { FACE: 'Kiosk', KIOSK: 'Kiosk', FINGER: 'สแกนนิ้ว', GPS: 'มือถือ', MANUAL: 'คีย์มือ' };
     const srcLabel = srcMap[String(row.source || '').toUpperCase()] || '—';
-    const srcHtml = `<span style="font-size:12px;color:var(--tx3)">${srcLabel}</span>`;
+    const srcHtml = srcLabel === 'คีย์มือ'
+      ? `<span style="font-size:14px;color:#e8590c;font-weight:700">${srcLabel}</span>`
+      : `<span style="font-size:12px;color:var(--tx3)">${srcLabel}</span>`;
     const dim = row.complete === false ? 'opacity:.5' : '';
     html += `<tr style="${isNewDay?'border-top:2px solid var(--bd2);':''}${dim}"><td><div class="hist-date">${thDate}</div><div style="font-family:var(--mo);font-size:13px;color:var(--tx)">${timeShort}${crossNote}</div></td><td>${typeHtml}</td><td>${statusHtml}</td><td>${srcHtml}</td></tr>`;
   });
